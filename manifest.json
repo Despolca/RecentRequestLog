@@ -1,0 +1,9 @@
+{
+    "display_name": "Nhật ký yêu cầu gần đây",
+    "loading_order": 999,
+    "js": "index.js",
+    "css": "style.css",
+    "author": "akira",
+    "version": "1.9.0",
+    "description": "Tự động lấy toàn bộ prompt được gửi cho AI mỗi lần, tiện lợi để xem lại bất cứ lúc nào."
+}
