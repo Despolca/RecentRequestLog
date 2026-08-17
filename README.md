@@ -21,7 +21,7 @@ Một plugin SillyTavern siêu tiện lợi, tự động bắt lấy toàn bộ
 Menu trên cùng `Extensions` → `Install Extension` → Copy và dán URL bên dưới vào → `Install for all users` → Cài xong nhớ F5 làm mới trang SillyTavern nha 🌸
 
 ```
-https://github.com/akira59851/RecentRequestLog
+https://github.com/Despolca/RecentRequestLog
 ```
 
 ### Lối vào bảng điều khiển
