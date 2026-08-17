@@ -1,9 +1,266 @@
 
 /* ============================================================
-   Nhật ký yêu cầu gần đây (Recent Request Log) — Styling cho Plugin bên thứ 3 của SillyTavern nè 🌸
+   Lịch sử Request gần đây (Recent Request Log) — CSS cho plugin bên thứ ba của SillyTavern
    ============================================================ */
 
-/* ── Khung sườn: Bộ chứa bảng điều khiển (Mặc định giao diện Sáng nha ☀️) ─────────────── */
+/* [Mục lục các khối] (Theo thứ tự từ trên xuống dưới trong file)
+   1. Bảng tổng hợp biến màu chủ đề    Nguồn duy nhất cho mọi màu sắc (Sáng/Tối mỗi chế độ một chỗ), chỉnh màu chỉ cần sửa ở đây
+   2. Khung: Container bảng điều khiển Thân bảng điều khiển (vị trí/kích thước/màu nền/font chữ/đổ bóng)
+   3. Phần đầu bảng điều khiển         Tiêu đề, bộ đếm, nút thao tác, ngăn kéo "Thêm"
+   4. Phần thân bảng điều khiển        Container danh sách, lớp phủ khi đóng, biểu tượng thu phóng ở góc dưới bên phải
+   5. Từng log đơn lẻ                  Thanh tiêu đề log, chấm nguồn (dot), phối màu khoảng token, nút thao tác, đánh dấu trạng thái phản hồi
+   6. Chức năng tìm kiếm               Kính lúp, ô nhập liệu, đếm số lượng, highlight kết quả trùng khớp
+   7. Danh sách tin nhắn bên trong log Thanh tiêu đề tin nhắn con, màu sắc vai trò, nội dung tin nhắn, thanh cuộn overlay, công tắc xem trước
+   8. Hiệu ứng chuyển đổi chủ đề       Hiệu ứng nhịp thở (breathe) và chuyển màu (transition)
+   9. Popup                            Cài đặt giới hạn log / Popup xác nhận (Sáng/Tối tự có một bộ biến riêng)
+   10. Hướng dẫn sử dụng               Khung highlight hướng dẫn, bong bóng, chấm tiến độ
+   11. Lớp phủ xem toàn văn            Thanh tiêu đề lớp phủ, chuyển đổi định dạng, khu vực nội dung
+   12. Tương thích di động             Toàn bộ quy tắc cho thiết bị di động với breakpoint duy nhất tại 768px
+   ============================================================ */
+
+/* Màu sắc được cung cấp thống nhất từ "Bảng tổng hợp biến màu chủ đề" bên dưới, chỉnh màu chỉ cần sửa bảng biến (một dòng cho chế độ Sáng + một dòng ghi đè cho chế độ Tối). */
+
+/* ════════════════════════════════════════════════════════════
+   Bảng tổng hợp biến màu chủ đề
+   ── Cách dùng: Mọi màu sắc trong các quy tắc bên dưới đều viết dưới dạng var(--tên_biến).
+   ── Chỉnh màu: Đổi giá trị ở dòng "Sáng", sau đó đổi giá trị của biến cùng tên trong khối "Tối", chỉnh 2 chỗ là áp dụng toàn file luôn nè.
+   ── Các giá trị giống nhau ở cả chế độ Sáng và Tối, chỉ viết một lần (như màu dot nguồn, màu nút nguy hiểm) không cần lặp lại trong khối màu Tối.
+   Lưu ý: Các biến được gắn vào #rlog-panel, mọi element bên trong bảng điều khiển sẽ tự động kế thừa;
+   Popup được gắn vào body của trang (không nằm trong bảng điều khiển), nên trên .rlog-dialog phải khai báo riêng một bộ biến y hệt.
+   ════════════════════════════════════════════════════════════ */
+
+/* ── Giá trị mặc định cho chủ đề Sáng (gắn vào #rlog-panel) ─────────── */
+#rlog-panel {
+    /* Background (Nền) */
+    --rlog-bg: #ffffff;                /* Nền của container bảng điều khiển */
+    --rlog-bg-header: #f3f4f6;         /* Nền của thanh tiêu đề bảng điều khiển/popup */
+    --rlog-bg-record: #ffffff;         /* Nền của thanh tiêu đề log */
+    --rlog-bg-record-hover: #f9fafb;   /* Nền hover của thanh tiêu đề log */
+    --rlog-bg-msg: #f9fafb;            /* Nền của thanh tiêu đề tin nhắn con */
+    --rlog-bg-msg-hover: #f2f3f5;      /* Nền hover của thanh tiêu đề tin nhắn con */
+    --rlog-bg-body: #f9fafb;           /* Nền khu vực nội dung chính của log */
+    /* Border / Phân cách */
+    --rlog-border: #d1d5db;            /* Viền bảng điều khiển/popup, viền ô nhập liệu, đường kẻ dọc chia thông tin */
+    --rlog-divider: #d1d5db;           /* Dấu phân cách dọc cho các thông tin của log (Màu tối khác với viền) */
+    --rlog-border-header: #e5e7eb;     /* Viền dưới thanh tiêu đề bảng điều khiển/popup */
+    --rlog-border-record: #e5e7eb;     /* Viền dưới của từng log lẻ (Đường phân cách log) */
+    --rlog-border-body: #e5e7eb;       /* Viền trên khu vực nội dung chính của log */
+    --rlog-border-msg: #e5e7eb;        /* Đường phân cách tin nhắn con */
+    /* Text (Chữ) */
+    --rlog-text: #1f2937;              /* Chữ mặc định trên bảng điều khiển / Chữ nhập tìm kiếm */
+    --rlog-text-title: #18181B;        /* Chữ tiêu đề bảng điều khiển (Lịch sử Request gần đây) */
+    --rlog-text-strong: #111827;       /* Chữ nhấn mạnh (icon khi hover, mục được chọn, chữ in đậm trên popup...) */
+    --rlog-text-muted: #6b7280;        /* Chữ/icon phụ (thời gian, model, nút bấm, đếm số...) */
+    --rlog-text-faint: #9ca3af;        /* Chữ làm mờ (đếm số, placeholder, mũi tên thu gọn, danh sách trống...) */
+    --rlog-text-faint-hover: #4b5563;  /* Màu đậm hơn khi hover của chữ làm mờ (hover vào số tiêu đề) */
+    --rlog-icon-faint: #9ca3af;        /* Icon xám nhạt (nút đóng/mũi tên thu gọn; ở chế độ tối sẽ sáng hơn chữ làm mờ một chút) */
+    --rlog-text-body: #374151;         /* Nội dung tin nhắn / Nội dung popup */
+    --rlog-text-char: #27272A;         /* Tên nhân vật trong log */
+    --rlog-text-source: #475569;       /* Chữ nhãn nguồn (native/plugin dùng chung màu) */
+    /* Accent / Danger / Success (Nhấn mạnh / Nguy hiểm / Thành công) */
+    --rlog-accent: #124e78;            /* Màu nhấn chính (xanh dương khi hover, viền lúc focus, tìm kiếm đang kích hoạt, màu chính của hướng dẫn) */
+    --rlog-accent-strong: #0d3a5a;     /* Màu nhấn đậm hơn (hover lúc tìm kiếm đang kích hoạt) */
+    --rlog-accent-soft: rgba(18, 78, 120, 0.08);  /* Nền màu nhấn nhạt (nền hover lúc tìm kiếm đang kích hoạt) */
+    --rlog-accent-glow: rgba(18, 78, 120, 0.15);  /* Hào quang tỏa ra ngoài ô nhập liệu khi focus */
+    --rlog-danger: #ef4444;            /* Màu icon nguy hiểm/xóa */
+    --rlog-danger-bg: #fee2e2;         /* Nền hover của icon nguy hiểm */
+    --rlog-success: #10b981;           /* Màu thành công (như icon công tắc tổng...) */
+    --rlog-deep-bg: #124e78;           /* Màu nền nút chính (xác nhận hướng dẫn/popup, Sáng/Tối giống nhau) */
+    --rlog-deep-bg-hover: #0f4063;     /* Màu nền nút chính khi hover (Sáng/Tối giống nhau) */
+    --rlog-deep-border: #0d3a5a;       /* Viền nút chính (Sáng/Tối giống nhau) */
+    --rlog-deep-border-hover: #0a2940; /* Viền nút chính khi hover (Sáng/Tối giống nhau) */
+    /* Nền hover chung / Đổ bóng */
+    --rlog-hover-bg: rgba(0, 0, 0, 0.05);    /* Nền nút/mục khi hover */
+    --rlog-hover-bg-strong: rgba(0, 0, 0, 0.08); /* Nền hover/focus làm đậm hơn */
+    --rlog-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); /* Đổ bóng container bảng điều khiển */
+    --rlog-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.1); /* Đổ bóng thanh trượt công tắc */
+    /* Lớp phủ khi đóng (Mask) */
+    --rlog-mask-bg: rgba(255, 255, 255, 0.6);  /* Nền lớp phủ khi tắt plugin */
+    --rlog-mask-text: #6b7280;                 /* Chữ hiển thị trên lớp phủ */
+    /* Nguồn dot / Dải màu hover của log */
+    --rlog-source-native: #1AC888;      /* Màu nguồn native (Sáng/Tối giống nhau, chỉ viết một lần) */
+    --rlog-source-plugin: #FBBF24;      /* Màu nguồn plugin (Sáng/Tối giống nhau, chỉ viết một lần) */
+    /* Đánh dấu trạng thái phản hồi */
+    --rlog-status-succeed: #6E9F4A;     /* Màu chữ đánh dấu thành công */
+    --rlog-status-fail: #C05E59;        /* Màu chữ đánh dấu thất bại */
+    --rlog-status-timeout: #B69D24;     /* Màu chữ đánh dấu timeout */
+    /* Phối màu khoảng Token (Cấp 0-6, cấp 7 có thêm hiệu ứng nhịp thở riêng ở dưới) */
+    --rlog-tier-0: #5B8DB8;
+    --rlog-tier-1: #4C9DA8;
+    --rlog-tier-2: #4B9F8A;
+    --rlog-tier-3: #6E9F4A;
+    --rlog-tier-4: #B69D24;
+    --rlog-tier-5: #C47D4F;
+    --rlog-tier-6: #C05E59;
+    --rlog-tier-7: #a94040;             /* >200K Cảnh báo (Đứng im) */
+    --rlog-tier-7-pulse: #db4646;       /* >200K Màu chớp sáng cho hiệu ứng nhịp thở */
+    /* Màu nhãn vai trò (Dải màu hover tự động lấy cùng màu với độ trong suốt 90%) */
+    --rlog-role-system: #4c4287;
+    --rlog-role-user: #0099BC;
+    --rlog-role-assistant: #038387;
+    --rlog-role-tool: #6d597a;
+    --rlog-role-response: #6172e2;
+    --rlog-role-other: #6b7280;
+    --rlog-msg-hover-bar: #9CA3AF;      /* Dải màu mặc định khi hover thanh tiêu đề tin nhắn con */
+    --rlog-flash-bg: #e5e7eb;           /* Nền chớp nháy khi nhảy lên đầu/xuống cuối */
+    /* Phản hồi khi Copy */
+    --rlog-copy-s-border: #10b981;      /* Viền copy thành công (Sáng/Tối giống nhau) */
+    --rlog-copy-s-bg: #ecfdf5;          /* Nền copy thành công */
+    --rlog-copy-s-text: #047857;        /* Chữ copy thành công */
+    --rlog-copy-f-border: #ef4444;      /* Viền copy thất bại (Sáng/Tối giống nhau) */
+    --rlog-copy-f-bg: #fef2f2;          /* Nền copy thất bại */
+    --rlog-copy-f-text: #b91c1c;        /* Chữ copy thất bại */
+    /* Công tắc phân đoạn (Xem trước nội dung) */
+    --rlog-preview-bg: #e5e7eb;         /* Nền container công tắc */
+    --rlog-preview-option: #6b7280;     /* Chữ tùy chọn (Chưa kích hoạt) */
+    --rlog-preview-active: #111827;     /* Chữ mục đang chọn */
+    --rlog-preview-inactive: #9ca3af;   /* Chữ mục chưa chọn */
+    --rlog-preview-slider: #ffffff;     /* Nền cục trượt */
+    /* Tìm kiếm */
+    --rlog-search-bg: rgba(0, 0, 0, 0.05);    /* Nền container ô nhập liệu */
+    --rlog-search-bg-hover: rgba(0, 0, 0, 0.08); /* Nền container lúc hover/focus */
+    --rlog-search-text: #1f2937;        /* Chữ nhập vào tìm kiếm */
+    --rlog-search-ph: #9ca3af;          /* Chữ gợi ý (placeholder) trong ô nhập liệu */
+    --rlog-search-disabled: #c1c5cc;    /* Trạng thái disable của mũi tên Lên/Xuống */
+    --rlog-mark-bg: #FFFF00;            /* Nền highlight kết quả tìm kiếm bình thường (Sáng/Tối giống nhau) */
+    --rlog-mark-bg-current: #FF9632;    /* Nền highlight kết quả đang chọn (Sáng/Tối giống nhau) */
+    --rlog-mark-color: inherit;         /* Màu chữ bên trong highlight (Chế độ Tối đổi thành màu đen) */
+    /* Thanh cuộn overlay */
+    --rlog-scroll-track: #e5e7eb;       /* Rãnh thanh cuộn nội dung tin nhắn */
+    --rlog-scroll-thumb: #94a3b8;       /* Cục trượt thanh cuộn */
+    --rlog-scroll-thumb-hover: #475569; /* Hover cục trượt */
+    --rlog-scroll-dot: #475569;         /* Chấm tròn kéo thả */
+    --rlog-resize: #9ca3af;             /* Màu mặc định góc tam giác thu phóng */
+    --rlog-resize-hover: #4b5563;       /* Màu hover góc tam giác thu phóng */
+    /* Hướng dẫn sử dụng */
+    --rlog-tour-bg: #ffffff;            /* Nền bong bóng hướng dẫn */
+    --rlog-tour-border: #e5e7eb;        /* Viền bong bóng / viền tam giác nhỏ */
+    --rlog-tour-text: #1f2937;          /* Chữ trong bong bóng */
+    --rlog-tour-body: #4b5563;          /* Chữ nội dung hướng dẫn */
+    --rlog-tour-shadow: 0 10px 30px rgba(0, 0, 0, 0.15); /* Đổ bóng bong bóng */
+    --rlog-tour-hl-border: #124e78;     /* Viền khung highlight */
+    --rlog-tour-hl-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4); /* Làm tối không gian bên ngoài khung highlight */
+    --rlog-tour-dot: #d1d5db;           /* Chấm tiến độ (chưa tới) */
+    --rlog-tour-dot-active: #124e78;    /* Chấm tiến độ (hiện tại) */
+    --rlog-tour-close: #9ca3af;         /* Icon nút đóng hướng dẫn */
+    --rlog-tour-close-bg: #f3f4f6;      /* Nền hover nút đóng hướng dẫn */
+    --rlog-tour-btn: #6b7280;           /* Chữ nút bấm thường trong hướng dẫn */
+    /* Lớp phủ xem toàn văn */
+    --rlog-read-bg: #ffffff;            /* Nền lớp phủ */
+    --rlog-read-header-bg: #f3f4f6;     /* Nền thanh tiêu đề lớp phủ */
+    --rlog-read-title: #111827;         /* Chữ tiêu đề lớp phủ */
+    --rlog-read-text: #374151;          /* Chữ nội dung lớp phủ */
+    --rlog-read-toggle-bg: #e5e7eb;     /* Nền container thanh trượt chuyển đổi định dạng */
+    --rlog-read-option: #6b7280;        /* Chữ tùy chọn định dạng (chưa kích hoạt) */
+    --rlog-read-active: #111827;        /* Chữ mục đang chọn */
+    --rlog-read-inactive: #9ca3af;      /* Chữ mục chưa chọn */
+    --rlog-read-slider: #ffffff;        /* Nền thanh trượt chuyển đổi định dạng */
+    --rlog-read-btn: #6b7280;           /* Icon nút thao tác trên lớp phủ */
+}
+
+/* ── Ghi đè giá trị cho chủ đề Tối (gắn vào #rlog-panel:not(.rlog-light)) ── */
+#rlog-panel:not(.rlog-light) {
+    --rlog-bg: #18181b;
+    --rlog-bg-header: #27272a;
+    --rlog-bg-record: #18181b;
+    --rlog-bg-record-hover: #212124;
+    --rlog-bg-msg: #121214;
+    --rlog-bg-msg-hover: #18181a;
+    --rlog-bg-body: #121214;
+    --rlog-border: #3f3f46;
+    --rlog-divider: #52525b;
+    --rlog-border-header: #3f3f46;
+    --rlog-border-record: rgba(255, 255, 255, 0.08);
+    --rlog-border-body: rgba(255, 255, 255, 0.05);
+    --rlog-border-msg: rgba(255, 255, 255, 0.04);
+    --rlog-text: #e4e4e7;
+    --rlog-text-title: #E4E4E7;
+    --rlog-text-strong: #f4f4f5;
+    --rlog-text-muted: #a1a1aa;
+    --rlog-text-faint: #71717a;
+    --rlog-text-faint-hover: #e4e4e7;
+    --rlog-icon-faint: #a1a1aa;
+    --rlog-text-body: #e4e4e7;
+    --rlog-text-char: #D4D4D8;
+    --rlog-text-source: #a1a1aa;
+    --rlog-accent: #a6d4f6;
+    --rlog-accent-strong: #8bbde0;
+    --rlog-accent-soft: rgba(107, 169, 212, 0.15);
+    --rlog-accent-glow: rgba(107, 169, 212, 0.15);
+    --rlog-danger: #f87171;
+    --rlog-danger-bg: rgba(248, 113, 113, 0.15);
+    --rlog-hover-bg: rgba(255, 255, 255, 0.08);
+    --rlog-hover-bg-strong: rgba(255, 255, 255, 0.12);
+    --rlog-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+    --rlog-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --rlog-mask-bg: rgba(24, 24, 27, 0.6);
+    --rlog-mask-text: #a1a1aa;
+    --rlog-status-succeed: #7EAE55;
+    --rlog-status-fail: #ba4e49;
+    --rlog-status-timeout: #BEAD40;
+    --rlog-tier-0: #6A9BC4;
+    --rlog-tier-1: #5BA9B4;
+    --rlog-tier-2: #58AA91;
+    --rlog-tier-3: #7EAE55;
+    --rlog-tier-4: #BEAD40;
+    --rlog-tier-5: #D08755;
+    --rlog-tier-6: #ba4e49;
+    --rlog-tier-7: #b64048;
+    --rlog-tier-7-pulse: #d34444;
+    --rlog-role-system: #9c93d2;
+    --rlog-role-user: #5cc0db;
+    --rlog-role-assistant: #58c7c9;
+    --rlog-role-tool: #b2a4bf;
+    --rlog-role-response: #A5B2F8;
+    --rlog-role-other: #a1a1aa;
+    --rlog-msg-hover-bar: #a1a1aa;
+    --rlog-flash-bg: #26262b;
+    --rlog-copy-s-bg: rgba(16, 185, 129, 0.1);
+    --rlog-copy-s-text: #1AC888;
+    --rlog-copy-f-bg: rgba(239, 68, 68, 0.1);
+    --rlog-copy-f-text: #f87171;
+    --rlog-preview-bg: #3f3f46;
+    --rlog-preview-option: #a1a1aa;
+    --rlog-preview-active: #f4f4f5;
+    --rlog-preview-inactive: #52525b;
+    --rlog-preview-slider: #52525b;
+    --rlog-search-bg: rgba(255, 255, 255, 0.08);
+    --rlog-search-bg-hover: rgba(255, 255, 255, 0.12);
+    --rlog-search-text: #f4f4f5;
+    --rlog-search-ph: #71717a;
+    --rlog-search-disabled: #52525b;
+    --rlog-mark-color: #000000;
+    --rlog-scroll-track: #27272a;
+    --rlog-scroll-thumb: #52525b;
+    --rlog-scroll-thumb-hover: #a1a1aa;
+    --rlog-scroll-dot: #a1a1aa;
+    --rlog-resize: #52525b;
+    --rlog-resize-hover: #a1a1aa;
+    --rlog-tour-bg: #27272a;
+    --rlog-tour-border: #3f3f46;
+    --rlog-tour-text: #e4e4e7;
+    --rlog-tour-body: #a1a1aa;
+    --rlog-tour-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    --rlog-tour-hl-border: #a6d4f6;
+    --rlog-tour-hl-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6);
+    --rlog-tour-dot: #52525b;
+    --rlog-tour-dot-active: #a6d4f6;
+    --rlog-tour-close: #71717a;
+    --rlog-tour-close-bg: rgba(255, 255, 255, 0.08);
+    --rlog-tour-btn: #a1a1aa;
+    --rlog-read-bg: #18181b;
+    --rlog-read-header-bg: #27272a;
+    --rlog-read-title: #f4f4f5;
+    --rlog-read-text: #e4e4e7;
+    --rlog-read-toggle-bg: #3f3f46;
+    --rlog-read-option: #a1a1aa;
+    --rlog-read-active: #f4f4f5;
+    --rlog-read-inactive: #52525b;
+    --rlog-read-slider: #52525b;
+    --rlog-read-btn: #a1a1aa;
+}
+
+/* ── Khung: Container bảng điều khiển (Mặc định chủ đề Sáng) ─────────────── */
 #rlog-panel {
     position: fixed;
     top: 80px;
@@ -13,71 +270,72 @@
     max-width: 95vw;
     min-height: 300px;
     max-height: 80vh;
-    background: #ffffff;
-    border: 1px solid #d1d5db;
+    background: var(--rlog-bg);
+    border: 1px solid var(--rlog-border);
     border-radius: 2px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--rlog-shadow);
     z-index: 9000;
     display: flex;
     flex-direction: column;
     overflow: hidden;
     font-family: 'Segoe UI', system-ui, -apple-system, Roboto, "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
-    color: #1f2937;
+    color: var(--rlog-text);
 }
 
-/* ── Đỉnh đầu của bảng điều khiển 🧠 ─────────────────────────────────────── */
+/* ── Phần đầu bảng điều khiển ─────────────────────────────────────── */
 .rlog-panel-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 10px 16px;
-    background: #f3f4f6;
-    border-bottom: 1px solid #e5e7eb;
+    background: var(--rlog-bg-header);
+    border-bottom: 1px solid var(--rlog-border-header);
     user-select: none;
     flex-shrink: 0;
 }
 
 .rlog-panel-header h4 {
     margin: 0;
-    font-size: 15px;
+    font-size: 15px; /* Cỡ chữ tiêu đề chuẩn (Bản Desktop): Chữ tiêu đề kế thừa giá trị này, bộ đếm ghi đè bằng font-size của riêng nó; Bản di động sẽ ghi đè thành 13px trong @media bên dưới */
     font-weight: 600;
     line-height: 1;
     letter-spacing: 0.5px;
-    color: #111827;
+    color: var(--rlog-text-title);
     display: flex;
     align-items: center;
     gap: 0;
-    font-family: inherit; /* Đồng nhất với tiêu đề "Xem toàn văn": Tawa đã cho nó kế thừa font của #rlog-panel, né luôn việc bị style h4 toàn cục của ST phá bĩnh đó! 😤 */
+    font-family: inherit; /* Đồng nhất với tiêu đề "Xem toàn văn": kế thừa font chữ của #rlog-panel, tránh việc style h4 global của ST chèn font khác vào */
 }
-/* Chữ trên tiêu đề — Click nhẹ cái là thu/mở cửa sổ nè (´• ω •) */
+/* Chữ tiêu đề — Click để thu gọn/mở rộng cửa sổ */
 .rlog-title-text {
     cursor: pointer;
     transition: color 0.15s;
     user-select: none;
     line-height: 1;
+    /* Cỡ chữ kế thừa từ .rlog-panel-header h4 (Desktop 15px / Di động 13px), muốn chỉnh riêng cỡ chữ tiêu đề thì thêm font-size ở đây là xong nè */
 }
-.rlog-title-text:hover { color: #124e78; }
+.rlog-title-text:hover { color: var(--rlog-accent); }
 
-/* Số trên tiêu đề — Double click để set số log tối đa, nhớ chừa chỗ trống để bấm nha 🚨 */
+/* Số tiêu đề — Nháy đúp để thiết lập số lượng log tối đa, cần chừa không gian để click */
 .rlog-title-count {
     cursor: pointer;
-    margin-left: 8px;
-    padding: 2px 6px 4px;
-    border-radius: 4px;
+    margin-left: 4px; /* Khoảng cách đến chữ "Lịch sử Request gần đây" ở bên trái (Bản Desktop; Bản di động có media query ghi đè riêng) */
+    padding: 2px 5px 4px; /* Padding của số: quyết định vùng click nháy đúp và kích thước khung nền hover (Trên 2 / Trái-phải 5 / Dưới 4, dưới nhiều hơn trên 2px để bù trừ cho top:1px bên dưới giúp căn giữa theo thị giác) */
+    border-radius: 2px; /* Bo góc khung nền hover */
     font-variant-numeric: tabular-nums;
-    font-size: 13px;
-    font-weight: 500;
+    font-size: 13px; /* Cỡ chữ của bộ đếm (Bản Desktop; Bản di động ghi đè riêng trong media query) */
+    font-weight: 600; /* Độ đậm của số (Đang cùng độ đậm 600 với tiêu đề, nếu muốn thanh mảnh hơn có thể đổi thành 500) */
     line-height: 1;
-    color: #9ca3af;
+    color: var(--rlog-text-faint);
     background: transparent;
     transition: color 0.15s, background 0.15s;
     user-select: none;
     position: relative;
-    top: 1px;
+    top: 1px; /* Tinh chỉnh chiều dọc: Dịch xuống 1px để căn thẳng hàng bằng mắt với chữ tiêu đề (Bản Desktop; Bản di động ghi đè riêng trong media query) */
 }
 .rlog-title-count:hover {
-    color: #4b5563;
-    background: rgba(0, 0, 0, 0.05);
+    color: var(--rlog-text-faint-hover);
+    background: var(--rlog-hover-bg);
 }
 
 .rlog-header-actions {
@@ -90,7 +348,7 @@
     background: transparent;
     border: none;
     border-radius: 4px;
-    color: #6b7280;
+    color: var(--rlog-text-muted);
     font-size: 15px;
     cursor: pointer;
     padding: 0;
@@ -103,15 +361,15 @@
     transition: color 0.15s, background 0.15s;
 }
 .rlog-header-btn:hover,
-#rlog-more-btn.active-drawer-btn { color: #111827; background: rgba(0,0,0,0.05); }
+#rlog-more-btn.active-drawer-btn { color: var(--rlog-text-strong); background: var(--rlog-hover-bg); }
 
-#rlog-clear-btn:hover { color: #ef4444; background: #fee2e2; }
+#rlog-clear-btn:hover { color: var(--rlog-danger); background: var(--rlog-danger-bg); }
 
 #rlog-close-btn {
     background: transparent;
     border: none;
     border-radius: 4px;
-    color: #9ca3af;
+    color: var(--rlog-icon-faint);
     font-size: 17px;
     cursor: pointer;
     padding: 0;
@@ -123,9 +381,9 @@
     justify-content: center;
     transition: color 0.15s, background 0.15s;
 }
-#rlog-close-btn:hover { color: #ef4444; background: #fee2e2; }
+#rlog-close-btn:hover { color: var(--rlog-danger); background: var(--rlog-danger-bg); }
 
-/* ── Ngăn kéo giấu 1001 tùy chọn khác (Vuốt ngang ra nha ✨) ────────── */
+/* ── Ngăn kéo chứa thêm tùy chọn (Trượt ngang ra) ────────── */
 .rlog-more-drawer {
     display: flex;
     align-items: center;
@@ -134,15 +392,15 @@
     max-width: 0;
     opacity: 0;
     transition: max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
-    /* Phối hợp cùng overflow:hidden, cấm tuyệt đối chuyện ép chữ rớt dòng, đảm bảo đo ra chiều rộng chuẩn 100% của một dòng! (｀・ω・´) */
+    /* Kết hợp với overflow:hidden, tránh cho nội dung bị ép xuống dòng, đảm bảo chiều rộng đo được là chiều rộng hoàn chỉnh của một dòng */
     white-space: nowrap;
 }
 .rlog-more-drawer.expanded {
-    max-width: 360px; /* Chiều rộng dự tính dư sức nhét hết đống nút vào */
+    max-width: 360px; /* Chiều rộng dự tính đủ để chứa tất cả các nút */
     opacity: 1;
 }
 
-/* ── Body của bảng điều khiển (Bọc luôn cái danh sách với cái góc resize nhỏ xíu xíu) ────────── */
+/* ── Phần thân bảng điều khiển (Bao bọc danh sách và góc resize) ────────── */
 .rlog-panel-body {
     flex: 1;
     display: flex;
@@ -153,12 +411,12 @@
     padding-bottom: 6px;
 }
 
-/* Trạng thái cửa sổ bị cuộn tròn: Giấu tiệt cái body đi, chừa đúng thanh tiêu đề thôi nha 🙈 */
+/* Trạng thái thu gọn cửa sổ: Ẩn toàn bộ phần thân, chỉ giữ lại thanh tiêu đề */
 .rlog-window-collapsed .rlog-panel-body {
     display: none;
 }
 
-/* ── Tấm màn che lúc plugin tắt thở (Cơ mà hông cản trở thao tác đâu nha 👻) ────────── */
+/* ── Lớp phủ khi plugin ở trạng thái tắt (Không chặn tương tác) ────────── */
 .rlog-disabled .rlog-panel-body::after {
     content: "";
     position: absolute;
@@ -166,35 +424,35 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(255, 255, 255, 0.6);
+    background: var(--rlog-mask-bg);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 14px;
     font-weight: 600;
-    color: #6b7280;
+    color: var(--rlog-mask-text);
     letter-spacing: 2px;
-    pointer-events: none; /* Cho phép chuột xuyên thấu luôn ✨ */
+    pointer-events: none; /* Cho phép chuột xuyên qua */
     z-index: 50;
-    backdrop-filter: grayscale(0.5); /* Hạ xíu xiu độ bão hòa ở đáy, ra dấu cho Editor biết là nó đình công rồi đó 🛑 */
+    backdrop-filter: grayscale(0.5); /* Giảm nhẹ độ bão hòa của lớp dưới, tăng thêm cảm giác đang ngừng hoạt động */
 }
-/* Khi danh sách trống trơn, đã có chữ báo trạng thái rõ mồn một rồi, nên Tawa giấu luôn tấm màn che để chữ khỏi bị mờ! 🧠 */
+/* Khi danh sách trống, đã có dòng chữ thông báo trạng thái rõ ràng, ẩn hoàn toàn lớp phủ để chữ không bị làm mờ */
 .rlog-disabled.rlog-empty-list .rlog-panel-body::after {
     background: transparent !important;
     backdrop-filter: none !important;
 }
 
-/* ── Khu vực danh sách (Lăn chuột mỏi tay luôn 📜) ──────────────────────────── */
+/* ── Khu vực danh sách (Có thể cuộn) ──────────────────────────── */
 .rlog-list {
     flex: 1;
     overflow-y: auto;
-    overflow-anchor: none; /* Đá văng tính năng cuộn neo nguyên thủy của trình duyệt đi, chỗ này là sân chơi của JS preserveScrollTop! 😤 */
+    overflow-anchor: none; /* Vô hiệu hóa tính năng neo cuộn mặc định của trình duyệt, để JS preserveScrollTop tự kiểm soát */
     padding: 0;
-    scrollbar-width: none; /* Firefox: Giấu nhẹm thanh cuộn nhưng tính năng vẫn còn nguyên nha */
-    -ms-overflow-style: none; /* IE/Edge: Bay màu thanh cuộn luôn */
+    scrollbar-width: none; /* Firefox: Ẩn thanh cuộn nhưng giữ nguyên chức năng */
+    -ms-overflow-style: none; /* IE/Edge: Ẩn thanh cuộn */
 }
 .rlog-list::-webkit-scrollbar {
-    display: none; /* Chrome/Safari/Webkit: Tàng hình thanh cuộn */
+    display: none; /* Chrome/Safari/Webkit: Ẩn thanh cuộn */
     width: 0;
     height: 0;
 }
@@ -205,13 +463,13 @@
     left: 50%;
     transform: translate(-50%, -50%);
     text-align: center;
-    color: #9ca3af;
+    color: var(--rlog-text-faint);
     font-size: 14px;
     width: 100%;
     pointer-events: none;
 }
 
-/* ── Cái núm resize bé tẹo ở góc dưới bên phải nè 📐 ─────────────────────────── */
+/* ── Ký hiệu thu phóng ở góc dưới bên phải ─────────────────────────── */
 .rlog-resize-grip {
     position: absolute;
     bottom: 0;
@@ -219,12 +477,12 @@
     width: 16px;
     height: 16px;
     cursor: nwse-resize;
-    z-index: 30; /* Nằm trên đầu thanh tiêu đề của từng log (z-index:20), để lúc cuộn cái tiêu đề sticky hông dám đè lên tam giác nhỏ của Tawa! (๑•̀ㅂ•́)و✧ */
+    z-index: 30; /* Cao hơn thanh tiêu đề của log lẻ (z-index:20), chống bị thanh tiêu đề sticky che mất hình tam giác khi cuộn */
     background: transparent;
     opacity: 0.5;
     transition: opacity 0.15s;
 }
-/* Xài pseudo-element để vẽ một cái tam giác nhỏ xíu xiu tối giản */
+/* Dùng pseudo-element để vẽ hình tam giác cực tối giản */
 .rlog-resize-grip::after {
     content: '';
     position: absolute;
@@ -234,44 +492,58 @@
     height: 0;
     border-style: solid;
     border-width: 0 0 8px 8px;
-    border-color: transparent transparent #9ca3af transparent;
+    border-color: transparent transparent var(--rlog-resize) transparent;
 }
-.rlog-resize-grip:hover { 
-    opacity: 1; 
+.rlog-resize-grip:hover {
+    opacity: 1;
 }
 .rlog-resize-grip:hover::after {
-    border-color: transparent transparent #4b5563 transparent;
+    border-color: transparent transparent var(--rlog-resize-hover) transparent;
 }
 
-/* ── Từng bản ghi một ─────────────────────────────────────── */
+/* ── Từng log đơn lẻ ─────────────────────────────────────── */
 .rlog-record {
     background: transparent;
     border-top: none;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--rlog-border-record);
     border-left: none;
     border-right: none;
     border-radius: 0;
     margin-bottom: 0;
 }
+/* Chế độ tối: Chỉ định màu viền cho cả 4 cạnh để đồng bộ với cách làm cũ (Dù style là none thì vẫn giữ nguyên giá trị tính toán) */
+#rlog-panel:not(.rlog-light) .rlog-record {
+    border-color: var(--rlog-border-record);
+}
 
-/* Cái đầu của bản ghi */
+/* Thanh tiêu đề log */
 .rlog-record-header {
     position: sticky;
     top: 0;
     z-index: 20;
-    background: #ffffff;
+    background: var(--rlog-bg-record);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 8px 16px; /* Bóp cái padding lại, cho nội dung duỗi thẳng ra 2 bên, canh chuẩn đét với 16px của bảng điều khiển trên cùng! 📏 */
+    padding: 8px 16px; /* Thu hẹp padding, để nội dung trải dài ra hai bên, căn lề thẳng với 16px của phần đỉnh bảng điều khiển */
     cursor: pointer;
     user-select: none;
     transition: background 0.15s, box-shadow 0.15s;
     box-shadow: inset 0 0 0 0 transparent;
 }
+
+/* Biến màu nguồn của log (data-source do JS viết trực tiếp lên root element của log):
+   Dải màu ở rìa trái khi hover dùng chung biến với màu dot nguồn, đổi màu chỉ cần sửa ở đây, cả 2 chỗ sẽ tự động khớp.
+   Tham số thứ hai của var() trong rule dot bên dưới chính là màu dự phòng (chỉ kích hoạt nếu log bị thiếu data-source),
+   cứ giữ cho giá trị giống hệt ở đây là được, không cần chỉnh riêng nữa. */
+.rlog-record[data-source="native"] { --rlog-source-color: var(--rlog-source-native); } /* Biến màu nguồn native (dùng chung cho dải màu hover và dot) */
+.rlog-record[data-source="plugin"] { --rlog-source-color: var(--rlog-source-plugin); } /* Biến màu nguồn plugin (dùng chung cho dải màu hover và dot) */
+
 .rlog-record-header:hover {
-    background: #f9fafb;
-    box-shadow: inset 2px 0 0 0 #124e78;
+    background: var(--rlog-bg-record-hover);
+    /* Màu của dải màu lề = màu dot nguồn (--rlog-source-color, ở chế độ tối sẽ bị ghi đè bởi biến màu tối ở bên dưới),
+       độ trong suốt giống với dải màu của tin nhắn con (90%), chỉ ảnh hưởng đến dải màu chứ không đụng tới cái dot nha */
+    box-shadow: inset 2px 0 0 0 color-mix(in srgb, var(--rlog-source-color, #124e78) 90%, transparent); /* Màu của dải màu khi hover trên thanh tiêu đề log (Màu nguồn độ trong 90%) */
 }
 
 .rlog-record-info {
@@ -282,67 +554,69 @@
     min-width: 0;
 }
 
+/* Vi chỉnh căn hàng cho tên nhân vật (Bản Desktop): Theo đo đạc thì trục giữa đã khớp với các thông tin bên phải (lệch ≤0.8px do đặc tính của font),
+   nhưng mắt nhìn lại thấy hơi thấp —— trước đây 4 mục bên phải phải dùng top:1px đè xuống bù trừ, nay đã gỡ bỏ;
+   Bây giờ đổi thành chỉ nâng riêng tên nhân vật lên 1px (position: relative + top: -1px). Nếu nhìn chưa ưng mắt thì xóa hai dòng này đi là được, 4 mục bên phải không bị lệch.
+   Nhưng ở bản di động test thử thì -1px lại thành hơi cao (size chữ tên nhân vật 12px bằng size nhãn nguồn),
+   nên đã reset top về 0 trong media query di động. Muốn chỉnh riêng Desktop/Mobile thì nhớ sửa cả ở đây và trong media query nhé. */
 .rlog-char-name {
     font-weight: 600;
     letter-spacing: 0.5px;
-    color: #124e78;
+    color: var(--rlog-text-char);
     font-size: 13px;
     line-height: 1.3;
     display: inline-flex;
     align-items: center;
+    position: relative;
+    top: -1px;
 }
 
 .rlog-time {
-    color: #6b7280;
-/*    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', 'Courier New', monospace;*/
+    color: var(--rlog-text-muted);
     font-variant-numeric: tabular-nums;
     font-size: 11px;
     white-space: nowrap;
     line-height: 1.3;
     display: inline-flex;
     align-items: center;
-    position: relative;
-    top: 1px;
 }
 
 .rlog-total-tokens {
-    color: #6b7280;
-/*    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', 'Courier New', monospace;*/
+    color: var(--rlog-text-muted); /* Màu chữ của tổng số token trên thanh tiêu đề log (Bản thân con số thì đổi màu theo khoảng, xem quy tắc tier bên dưới nhé) */
     font-variant-numeric: tabular-nums;
     font-size: 11px;
     white-space: nowrap;
     line-height: 1.3;
     display: inline-flex;
     align-items: center;
-    position: relative;
-    top: 1px;
 }
 
-/* ── Bảng màu cho số lượng Token nè (Chỉ tính tổng trên thanh tiêu đề thôi nha 🔢)
-   tier 0-7 do hàm JS getTokenTier() chia chác dựa trên tổng token, Tawa cho chạy bằng thuần CSS class luôn! 🧠✨ */
+/* ── Phối màu cho các khoảng đếm Token (Chỉ áp dụng cho tổng số trên thanh tiêu đề log) 
+   các cấp độ (tier) từ 0-7 được hàm getTokenTier() của JS phân bổ dựa vào tổng token, hoàn toàn thay đổi nhờ CSS class */
 .rlog-token-num {
     font-variant-numeric: tabular-nums;
 }
 
-/* Giao diện Light Mode chói lòa ☀️ */
-.rlog-total-tokens .rlog-token-tier-0 { color: #5B8DB8; } /* <4K */
-.rlog-total-tokens .rlog-token-tier-1 { color: #4C9DA8; } /* 4K-8K */
-.rlog-total-tokens .rlog-token-tier-2 { color: #4B9F8A; } /* 8K-16K */
-.rlog-total-tokens .rlog-token-tier-3 { color: #6E9F4A; } /* 16K-32K */
-.rlog-total-tokens .rlog-token-tier-4 { color: #A49A45; } /* 32K-64K */
-.rlog-total-tokens .rlog-token-tier-5 { color: #C47D4F; } /* 64K-128K */
-.rlog-total-tokens .rlog-token-tier-6 { color: #C05E59; } /* 128K-200K */
+/* Lấy màu từ Bảng tổng hợp biến màu (Có bộ Sáng/Tối riêng, xem ở đầu file) */
+.rlog-total-tokens .rlog-token-tier-0 { color: var(--rlog-tier-0); }
+.rlog-total-tokens .rlog-token-tier-1 { color: var(--rlog-tier-1); }
+.rlog-total-tokens .rlog-token-tier-2 { color: var(--rlog-tier-2); }
+.rlog-total-tokens .rlog-token-tier-3 { color: var(--rlog-tier-3); }
+.rlog-total-tokens .rlog-token-tier-4 { color: var(--rlog-tier-4); }
+.rlog-total-tokens .rlog-token-tier-5 { color: var(--rlog-tier-5); }
+.rlog-total-tokens .rlog-token-tier-6 { color: var(--rlog-tier-6); }
 
-/* >200K Đỏ thẫm + Nhịp đập chớp nháy từ từ (Animation thuần color nha, Tawa cấm đụng tới filter! 🚨) */
+/* >200K Đỏ đậm + Hiệu ứng nhịp thở chớp sáng chậm (Chỉ là hiệu ứng color thuần, không xài filter) */
 .rlog-total-tokens .rlog-token-tier-7 {
-    color: #a94040;
-    animation: rlog-token-pulse-light 4s ease-in-out infinite;
+    color: var(--rlog-tier-7);
+    animation: rlog-token-pulse 4s ease-in-out infinite;
 }
 
-@keyframes rlog-token-pulse-light {
-    0%, 88%   { color: #a94040; } /* Đứng yên */
-    95%       { color: #db4646; } /* Phát sáng nè ✨ */
-    100%      { color: #a94040; } /* Về như cũ */
+/* Keyframe đơn nhất: Màu sắc lấy từ biến --rlog-tier-7 của phần tử có animation, tự động khớp với Sáng/Tối */
+@keyframes rlog-token-pulse {
+    0%, 88%   { color: var(--rlog-tier-7); }
+    95%       { color: var(--rlog-tier-7-pulse); }
+    100%      { color: var(--rlog-tier-7); }
 }
 
 .rlog-source-badge {
@@ -352,15 +626,13 @@
     align-items: center;
     gap: 4px;
     line-height: 1.3;
-    position: relative;
-    top: 1px;
 }
 
 .rlog-status-dot {
-    width: 6px;
-    height: 6px;
-    min-width: 6px;
-    min-height: 6px;
+    width: 5px;
+    height: 5px;
+    min-width: 5px;
+    min-height: 5px;
     border-radius: 50%;
     display: block;
     flex-shrink: 0;
@@ -372,42 +644,40 @@
     font-size: 0;
 }
 
-.rlog-source-native {
-    color: #6b7280;
+.rlog-source-native,
+.rlog-source-plugin {
+    color: var(--rlog-text-source); /* Màu chữ của nhãn nguồn (native/plugin chung màu) */
 }
 .rlog-source-native .rlog-status-dot {
-    background-color: #34d399;
+    background-color: var(--rlog-source-color, var(--rlog-source-native)); /* Màu dot nguồn native (biến này được định nghĩa từ root element của log, đây chỉ là màu dự phòng) */
+    opacity: 1;
 }
 
-.rlog-source-plugin {
-    color: #6b7280;
-}
 .rlog-source-plugin .rlog-status-dot {
-    background-color: #fbbf24;
+    background-color: var(--rlog-source-color, var(--rlog-source-plugin)); /* Màu dot nguồn plugin (biến này được định nghĩa từ root element của log, đây chỉ là màu dự phòng) */
+    opacity: 1;
 }
 
-/* Nhãn tên Model — Chui vào nằm giữa nhãn nguồn với thời gian nha */
+/* Nhãn tên model — Hiển thị chen giữa nhãn nguồn và thời gian request */
 .rlog-model-badge {
     font-size: 11px;
     white-space: nowrap;
-    color: #6b7280;
+    color: var(--rlog-text-muted);
     max-width: 180px;
     overflow: hidden;
     text-overflow: ellipsis;
     line-height: 1.3;
     display: inline-flex;
     align-items: center;
-    position: relative;
-    top: 1px;
 }
 
-/* Dấu phân cách: Một đường dọc mỏng dính tối giản | */
+/* Ký tự phân cách: Đường kẻ dọc tối giản */
 .rlog-record-info > span:not(:first-child):not(.rlog-source-badge)::before {
     content: "";
     display: block;
     width: 1px;
     height: 10px;
-    background-color: #d1d5db;
+    background-color: var(--rlog-divider);
     margin-right: 6px;
 }
 
@@ -416,11 +686,14 @@
     align-items: center;
     gap: 4px;
     flex-shrink: 0;
+    justify-content: flex-end; /* Các nút thao tác dồn sang phải; dùng min-height để giữ chiều cao cố định lúc thu gọn/mở rộng, ngăn việc giao diện bị giật nhảy lên xuống */
+    min-height: 24px;
 }
 
 .rlog-read-full-btn,
 .rlog-msg-collapse-btn,
 .rlog-msg-expand-btn,
+.rlog-jump-bottom-btn,
 .rlog-delete-record-btn {
     padding: 0;
     width: 24px;
@@ -428,7 +701,7 @@
     background: transparent;
     border: none;
     border-radius: 4px;
-    color: #6b7280;
+    color: var(--rlog-text-muted);
     font-size: 13px;
     cursor: pointer;
     transition: background 0.15s, color 0.15s;
@@ -438,12 +711,13 @@
 }
 .rlog-read-full-btn:hover,
 .rlog-msg-collapse-btn:hover,
-.rlog-msg-expand-btn:hover { background: rgba(0, 0, 0, 0.05); color: #111827; }
+.rlog-msg-expand-btn:hover,
+.rlog-jump-bottom-btn:hover { background: var(--rlog-hover-bg); color: var(--rlog-text-strong); }
 
-.rlog-delete-record-btn:hover { color: #ef4444; background: #fee2e2; }
+.rlog-delete-record-btn:hover { color: var(--rlog-danger); background: var(--rlog-danger-bg); }
 
 .rlog-toggle-icon {
-    color: #9ca3af;
+    color: var(--rlog-icon-faint);
     font-size: 14px;
     transition: transform 0.25s ease, color 0.35s ease;
     width: 20px;
@@ -453,29 +727,69 @@
     justify-content: center;
 }
 
-/* Trạng thái rụt vào/lòi ra của bản ghi */
+/* Trạng thái thu gọn/mở rộng của log */
 .rlog-record.collapsed .rlog-record-body { display: none; }
 .rlog-record.collapsed .rlog-toggle-icon { transform: rotate(-90deg); }
 .rlog-record.expanded .rlog-toggle-icon { transform: rotate(0deg); }
 
-/* Lúc rụt vào là giấu biến mấy nút thao tác ngay lập tức (Chừa lại cái mũi tên thôi), nút tìm kiếm cũng phải ngoan ngoãn làm theo mấy nút bên cạnh! 😤 */
+/* Ẩn tức thì nút thao tác (chỉ giữ lại mũi tên) khi thu gọn, nút tìm kiếm hành xử giống hệt các nút kế bên */
 .rlog-record.collapsed .rlog-read-full-btn,
 .rlog-record.collapsed .rlog-msg-collapse-btn,
 .rlog-record.collapsed .rlog-msg-expand-btn,
+.rlog-record.collapsed .rlog-jump-bottom-btn,
 .rlog-record.collapsed .rlog-delete-record-btn,
 .rlog-record.collapsed .rlog-search-btn {
     display: none;
 }
 
-/* Canh lề cái rlog-record-actions đàng hoàng, giữ chiều cao chuẩn không cần chỉnh để lúc gập/mở khỏi bị giật cục lên xuống! 📏 */
-.rlog-record-actions {
-    justify-content: flex-end;
-    min-height: 24px;
+/* Inline SVG cho các nút Lên đầu/Xuống cuối (Mũi tên đơn + vạch ngang chuẩn style Lucide): 
+   Kích thước dựa theo size chữ của nút (1.2em, to hơn 1em thuần xíu xiu), màu nét vẽ thì xài currentColor để tự động ăn khớp với chế độ Sáng/Tối */
+.rlog-jump-bottom-btn svg,
+.rlog-read-jump-top-btn svg,
+.rlog-read-jump-bottom-btn svg {
+    width: 1.2em;
+    height: 1.2em;
+    display: block;
+    flex-shrink: 0;
 }
 
-/* ── Chức năng tìm kiếm siêu việt của Tawa 🔍 ──────────────────────────────────── */
+/* ── Đánh dấu trạng thái phản hồi: Chỉ hiện ra chen giữa nhóm nút và mũi tên khi thu gọn, lúc mở rộng thì ẩn đi ── */
+/* Container của đánh dấu trạng thái: font-size / letter-spacing điều khiển cỡ chữ, khoảng cách chữ; Xem màu trong Bảng tổng hợp biến --rlog-status-* */
+.rlog-reply-status {
+    display: none; /* Mặc định mở rộng thì không hiện */
+    font-size: 11px;
+    letter-spacing: 0.3px;
+    line-height: 1;
+    padding: 0 2px;
+    white-space: nowrap;
+    user-select: none;
+    /* Chiều rộng của nhãn trạng thái được cố định bằng kích thước của "nhãn rộng nhất" (--rlog-status-w do JS đo lường thực tế rồi gán vào):
+       Lúc nhận phản hồi, độ rộng slot không đổi, giúp màn hình hẹp không bị dồn hàng nhảy lung tung;
+       Chữ căn phải sát rạt vào mũi tên thu gọn, nhãn ngắn (Fail) có dư khoảng trống thì để bên trái, bên phải tuyệt đối không để trống */
+    min-width: var(--rlog-status-w, 0px);
+    justify-content: flex-end;
+}
+.rlog-record.collapsed .rlog-reply-status {
+    display: inline-flex;
+    align-items: center;
+}
 
-/* Cái nút kính lúp ở khu thao tác (Lúc bình thường nè) */
+/* Slot trong suốt để giữ chỗ khi đang đợi phản hồi: Dùng chung slot với nhãn trạng thái (chung min-width),
+   chỉ hiện khi thu gọn (áp dụng quy tắc .rlog-record.collapsed bên trên),
+   nhận được phản hồi thì appendReplyToRecordDom sẽ thay thế đúng chỗ thành nhãn trạng thái luôn, lúc mở rộng cũng ẩn đi nốt.
+   visibility:hidden vẫn chiếm chỗ layout nhưng tàng hình, cũng không lọt vào accessiblity tree. */
+.rlog-reply-status-placeholder {
+    visibility: hidden;
+}
+
+/* 3 loại đánh dấu trạng thái phản hồi: Màu nhặt từ Bảng tổng hợp biến --rlog-status-*; Độ trong suốt chung 0.85 (kéo thấp xuống sẽ làm cái nhãn mờ đi) */
+.rlog-reply-status-succeed { color: var(--rlog-status-succeed); opacity: 0.85; }
+.rlog-reply-status-fail { color: var(--rlog-status-fail); opacity: 0.85; }
+.rlog-reply-status-timeout { color: var(--rlog-status-timeout); opacity: 0.85; } /* Màu cho đánh dấu timeout —— Phối màu tách biệt rồi, không liên quan đến màu của vai trò Response đâu nha */
+
+/* ── Chức năng tìm kiếm ──────────────────────────────────── */
+
+/* Nút Kính lúp ở khu thao tác log (Trạng thái thường) */
 .rlog-search-btn {
     padding: 0;
     width: 24px;
@@ -483,7 +797,7 @@
     background: transparent;
     border: none;
     border-radius: 4px;
-    color: #6b7280;
+    color: var(--rlog-text-muted);
     font-size: 12px;
     cursor: pointer;
     transition: background 0.15s, color 0.15s;
@@ -492,66 +806,67 @@
     justify-content: center;
 }
 .rlog-search-btn:hover {
-    background: rgba(0, 0, 0, 0.05);
-    color: #111827;
+    background: var(--rlog-hover-bg);
+    color: var(--rlog-text-strong);
 }
 
-/* ── Lúc bật Mode Tìm Kiếm: Mấy nút khác bị ném cái visibility:hidden vào mặt để giữ đúng chỗ trống đó! 🛑 ──
-   Tối quan trọng: Tuyệt đối hông xài display:none (Nó mà giải phóng chỗ là kính lúp bị đẩy bay màu luôn đó),
-   Mà phải giấu đi nhưng giữ khư khư chỗ đó, cho cái actions-inner to y hệt lúc bình thường,
-   Thế là nút kính lúp (.rlog-search-btn) sẽ ngồi im thin thít không nhúc nhích! (｀・ω・´)✧ */
+/* ── Trạng thái bật chế độ tìm kiếm: Các nút khác dùng visibility:hidden để giữ chỗ khoảng rộng ── 
+   Trọng điểm: Không dùng display:none (sẽ xả mất không gian làm nút Kính lúp bị đẩy lệch đi),
+   mà phải giấu đi nhưng chừa lại không gian đó, để độ rộng của actions-inner giống hệt lúc bình thường,
+   thế thì cái nút Kính lúp (.rlog-search-btn) mới nằm im một chỗ. */
 .rlog-record.rlog-searching .rlog-msg-expand-btn,
 .rlog-record.rlog-searching .rlog-msg-collapse-btn,
 .rlog-record.rlog-searching .rlog-read-full-btn,
+.rlog-record.rlog-searching .rlog-jump-bottom-btn,
 .rlog-record.rlog-searching .rlog-delete-record-btn {
     visibility: hidden;
     pointer-events: none;
 }
 
-/* Kính lúp tự động chói sáng khi tìm kiếm bật lên (Giống y cái màu xanh của tên nhân vật trên thanh tiêu đề nha ✨) */
+/* Khi bật chế độ tìm kiếm, icon Kính lúp sáng lên (Cùng màu xanh với tên nhân vật ở thanh tiêu đề) */
 .rlog-record.rlog-searching .rlog-search-btn {
-    color: #124e78;
+    color: var(--rlog-accent);
 }
 .rlog-record.rlog-searching .rlog-search-btn:hover {
-    background: rgba(18, 78, 120, 0.08);
-    color: #0d3a5a;
+    background: var(--rlog-accent-soft);
+    color: var(--rlog-accent-strong);
 }
 
-/* Lấy luôn khu thao tác làm vật tế thần (container tham chiếu) để định vị tuyệt đối cho ô tìm kiếm! 🧠 */
+/* Khu thao tác log đóng vai trò làm container mốc cho ô tìm kiếm định vị tuyệt đối (absolute) */
 .rlog-record-actions-inner {
     position: relative;
 }
 
-/* Hộp chứa ô tìm kiếm (Không thèm viền, không thèm nền luôn 👻)
-   Định vị tuyệt đối kéo dài từ mép phải của kính lúp (24px = độ mập của kính lúp, dính chặt không hở một li) cho tới mép phải của mũi tên gập/mở:
-   right: -24px = Lấn chiếm chỗ của mũi tên gập (Rộng 20px + gap 4px nè),
-   Bắt mép phải mũi tên lên/xuống phải thẳng hàng tăm tắp với mép phải mũi tên gập lúc chưa bung lụa,
-   Diệt gọn khoảng trống dư thừa bên phải, cứu rỗi ô text với số đếm khỏi cảnh bị bóp bẹp dí. (๑•̀ㅂ•́)و
-   Cấm mở rộng sang trái → Kính lúp cứ thế mà cắm rễ không đổi vị trí */
+/* Container của ô tìm kiếm (Không viền, Không nền)
+   Cắm vị trí tuyệt đối tính từ rìa phải của nút Kính lúp (24px = rộng của kính lúp, ép sát rạt) dài qua tới rìa phải của mũi tên thu gọn:
+   right: -24px = Chỗ của mũi tên thu gọn (Rộng 20px + gap 4px),
+   để mép phải của 2 mũi tên lên/xuống thẳng hàng với mép phải của mũi tên thu gọn trước lúc mở ô tìm kiếm ra,
+   triệt tiêu phần không gian thừa bên phải, tránh tình trạng ô nhập liệu và bộ đếm bị ép nhỏ xíu.
+   Không phình sang trái → Icon Kính lúp nằm im bất động */
 .rlog-search-box {
     display: flex;
     align-items: center;
-    gap: 0; /* Khoảng cách rỗng: Ép sát vào nhau đi, nhường hết sân khấu cho ô nhập chữ! ✨ */
+    gap: 0; /* Khoảng cách 0: Ép chặt vào nhau, nhường tối đa độ rộng cho ô nhập liệu */
     min-width: 0;
     max-width: 100%;
-    overflow: hidden; /* Cắt phéng phần lồi ra, thề không để nút bị đẩy văng khỏi nhà */
+    overflow: hidden; /* Cắt gọt bớt khi nội dung tràn ra, giữ cho nút không bị văng ra khỏi container */
     animation: rlog-search-expand 0.18s ease-out;
 }
 .rlog-record.rlog-searching .rlog-search-box {
     position: absolute;
-    left: 24px; /* Hôn hít mép phải kính lúp, triệt tiêu khe hở để ô text bành trướng ra */
-    right: -24px; /* Vươn sang vòi bạch tuộc bên phải đè lên chỗ của mũi tên gập, canh bằng mép phải của nó luôn */
-    top: -8px; /* Bành trướng lên trên nuốt luôn cái padding 8px của thanh tiêu đề: Chọt vô đây cũng hông thoát tìm kiếm đâu (Bản gốc top:0 lùn tịt chỉ che nút, lỡ tay chọt trúng khoảng trắng là bản ghi tự gập rụp lại ngay) 😤 */
-    bottom: -8px; /* Tràn xuống dưới nuốt nốt padding 8px bên dưới: Chọt vô đây cũng hông văng tìm kiếm (Lý do y như trên 🧠) */
+    left: 24px; /* Ép sát mép phải Kính lúp, xóa bỏ khe hở để ô nhập liệu rộng hơn */
+    right: -24px; /* Kéo dài sang phải trùm luôn chỗ của mũi tên thu gọn, căn thẳng với mép phải của mũi tên thu gọn */
+    top: -8px; /* Phình lên trên để che luôn padding 8px ở mặt trên thanh tiêu đề: Click vào vùng này không bị thoát tìm kiếm (Hồi trước top:0 chỉ che cỡ chiều cao cái nút, quẹt trúng padding trống bên trên là log tự gập lại luôn) */
+    bottom: -8px; /* Phình xuống dưới để che luôn padding 8px ở mặt dưới thanh tiêu đề: Click vào vùng này không bị thoát tìm kiếm (Lý do giống hệt trên) */
 }
 @keyframes rlog-search-expand {
     from { opacity: 0; transform: translateX(-6px); }
     to   { opacity: 1; transform: translateX(0); }
 }
 
-/* Mấy cái nút cắn rứt trong ô tìm kiếm (Mũi tên lên xuống)
-   Đồng bộ 20x20 hết: Nhỏ gọn hơn đám nút ngoài kia, để ô text có chỗ mà thở 💨
-   (Mép phải vẫn bám víu sát cạnh phải ô tìm kiếm, không đổi dời) */
+/* Nút nằm trong ô tìm kiếm (Mũi tên Lên/Xuống) 
+   Đồng bộ 20x20: Gọn hơn các nút thao tác bên ngoài, nhường nhiều không gian hơn cho ô nhập liệu
+   (Mép phải vẫn dính sát rạt bên phải ô tìm kiếm, không nhúc nhích) */
 .rlog-search-prev,
 .rlog-search-next {
     padding: 0;
@@ -560,35 +875,35 @@
     background: transparent;
     border: none;
     border-radius: 4px;
-    color: #6b7280;
+    color: var(--rlog-text-muted);
     font-size: 12px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    position: relative; /* Làm la bàn tham chiếu cho icon tự căn giữa tuyệt đối 🧭 */
+    position: relative; /* Cung cấp cột mốc để căn giữa tuyệt đối cho icon */
 }
 .rlog-search-prev:hover:not(:disabled),
 .rlog-search-next:hover:not(:disabled) {
-    background: rgba(0, 0, 0, 0.05);
-    color: #111827;
+    background: var(--rlog-hover-bg);
+    color: var(--rlog-text-strong);
 }
-/* Chừa cái khe hẹp 1px giữa ô nhập (kèm bộ đếm) với cái nút Kế tiếp */
+/* Hở 1px giữa ô nhập liệu (Có chứa đếm số) và nút Tiếp Theo */
 .rlog-search-next {
     margin-left: 1px;
 }
 
-/* Tawa ép buộc icon Font Awesome phải nằm ngay giữa tâm hình học trong cái nút (Bao chuẩn trên mọi nền tảng nha!): 😤
-   Mấy trình duyệt với điện thoại ất ơ cứ thích render line-box của pseudo-element Font Awesome lộn xộn
-   (Baseline lệch pha, lề trắng trong glyph thì lồi lõm), làm flex căn giữa mà nhìn mắt thường cứ bị trôi lên tuột xuống. (￢_￢;)
-   Tối quan trọng: Phải ụp cái absolute positioning thẳng vô mặt pseudo-element ::before (Cái hình dáng thật của icon),
-   Chứ tuyệt đối hông dán vô cái vỏ bọc <i>—— vì line-box của <i> vẫn dính lời nguyền line-height với glyph
-   do lệch pha render, cái hộp căn giữa ≠ con mắt nhìn thấy nó ở giữa. 🧠✨
-   Chơi chiêu lôi bản thể cái glyph ra định vị ngay tâm nút luôn, dứt tình hẳn với mấy mớ bòng bong line-box/baseline/lề trắng ảo ma. (๑•̀ㅂ•́)و✧ */
+/* Ép icon Font Awesome căn giữa hình học bên trong nút (Tương thích mọi nền tảng):
+   Các trình duyệt / Nền tảng di động khác nhau render line-box của pseudo-element chứa glyph Font Awesome không đồng nhất
+   (Vị trí baseline, viền trắng quanh glyph chênh lệch nhau), làm cho flex lúc căn giữa nhìn bằng mắt sẽ bị lệch lên/xuống.
+   Trọng điểm: Định vị absolute phải đánh thẳng vào pseudo-element ::before (Bản thể của glyph),
+   chứ không phải đánh vào thẻ <i> bao bọc nó —— bởi vì line-box của <i> vẫn ăn theo line-height và khác biệt render của glyph,
+   căn giữa cái box chưa chắc đã bằng căn giữa cái chữ.
+   Bắt bản thể glyph căn đúng giữa hình học của cái nút, vứt hết ba cái line-box/baseline/viền trắng ra chuồng gà luôn. */
 .rlog-search-prev i,
 .rlog-search-next i {
-    position: relative; /* Làm cái hộp chứa tham chiếu để cho glyph ::before đu bám định vị */
+    position: relative; /* Dùng làm mốc cho pseudo-element ::before định vị absolute */
     display: block;
     width: 100%;
     height: 100%;
@@ -602,151 +917,150 @@
     line-height: 1;
 }
 
-/* Hộp bọc ô tìm kiếm (Có bo góc tô màu nền: Textbox + Bộ đếm bú chung màu nền nha)
-   Cao su bành trướng lấp đầy chỗ trống, bị xích cổ bởi min/max, lỡ chật quá thì tự biết thân thu nhỏ lại. 🎈
-   max-width 220px: Trạm dừng chân thoải mái cho ô text phình to nếu chỗ chứa vẫn dư dả.
-   Ruột gan bên trong: Ô nhập liệu tàng hình (Cao su thu dãn) + Bộ đếm (Bất di bất dịch) →
-   Lúc số nó mập ra (Tới mức 100/100) thì tự động ủi sang trái lấn đất của ô chữ. 😤 */
+/* Container ô nhập liệu (Bo góc có màu nền: Ô nhập liệu + bộ đếm xài chung màu nền)
+   Trương nở đàn hồi chiếm hết chỗ trống, bị khống chế bởi min/max, hết chỗ thì tự động teo lại.
+   max-width 220px: Lúc dư dả không gian thì thả cửa cho ô nhập liệu rộng hơn.
+   Cấu trúc ruột: Ô nhập liệu trong suốt (Co giãn đàn hồi) + Bộ đếm (Không co giãn) →
+   Lúc số đếm phình to ra (ví dụ: 100/100) thì nó sẽ tự động chèn sang trái ăn bớt không gian chữ của ô nhập liệu. */
 .rlog-search-input-wrap {
     flex: 1 1 auto;
-    width: 140px;           /* flex-basis bề ngang nền tảng: Body chuẩn của khu vực nhập liệu lúc giàu có đất đai */
-    min-width: 0;           /* Chơi hệ co dãn 100%, thiếu đất là tự giác nhường chỗ ngay và luôn */
+    width: 140px;           /* Độ rộng gốc flex-basis: Kích cỡ mặc định của khu vực nhập liệu khi không gian dư dả */
+    min-width: 0;           /* Được phép co rút đàn hồi 100%, thiếu không gian thì nó phải nhường chỗ đầu tiên */
     max-width: 220px;
-    margin-left: 1px;       /* Cách cái kính lúp với ô gõ chữ đúng 1px nha */
+    margin-left: 1px;       /* Hở 1px giữa Kính lúp và ô nhập liệu */
     height: 24px;
     box-sizing: border-box;
     display: flex;
     align-items: center;
     border-radius: 4px;
-    background: rgba(0, 0, 0, 0.05);
-    overflow: hidden;       /* Khóa mõm hông cho nội dung tràn ra khỏi bo góc */
-    padding-right: 3px;     /* Khoảng cách chết cứng giữa cục đếm với mép phải màu nền: Số mập ra thì nó đâm sang trái, lề phải vẫn nằm im bất động 🛑 */
+    background: var(--rlog-search-bg);
+    overflow: hidden;       /* Chống cho nội dung tràn ra khỏi đường bo góc */
+    padding-right: 3px;     /* Khoảng cách cố định giữa bộ đếm và viền phải của màu nền: Lúc số phình to ra thì lấn sang trái, khoảng cách vẫn giữ y nguyên */
     transition: background 0.15s ease;
 }
 .rlog-search-input-wrap:hover {
-    background: rgba(0, 0, 0, 0.08);
+    background: var(--rlog-search-bg-hover);
 }
 .rlog-search-input-wrap:focus-within {
-    background: rgba(0, 0, 0, 0.08);
+    background: var(--rlog-search-bg-hover);
 }
 
-/* Ô nhập liệu tìm kiếm (Nền tàng hình hòa tan vào vỏ bọc; Vùng chữ thì múa dẻo co dãn)
-   Nhét cái !important vô để đập nát cái viền/outline/bóng bẩy/mặt mộc mặc định của input, 🔨
-   Chặn họng mấy cái style toàn cục của ST (kiểu như input:focus-visible) tính ép uổng input mặc thêm cái viền,
-   Làm lòi ra cái đường chỉ vô duyên giữa chỗ gõ chữ với cái bộ đếm. 😤 */
+/* Ô nhập tìm kiếm (Nền trong suốt, hòa lẫn vào nền container; Khu vực chữ co rút đàn hồi)
+   Dùng !important để ép gỡ hết border/outline/đổ bóng/giao diện gốc của thẻ input,
+   đề phòng style global của trang chủ ST (ví dụ: input:focus-visible) nhét thêm viền vào input,
+   làm lòi ra một đường kẻ chỉ mỏng dính giữa khu nhập liệu và bộ đếm. */
 .rlog-search-input {
     flex: 1 1 auto;
-    min-width: 0;           /* Biến hình co dãn vô hạn, lúc mấy số đếm mập ra thì tự rút lui nhường đất */
+    min-width: 0;           /* Cho phép co rút đàn hồi 100%, số đếm to ra thì nhường chỗ cho nó trước */
     height: 100%;
     padding: 0 8px;
     border: none !important;
     border-radius: 0;
     background: transparent !important;
-    color: #1f2937;
+    color: var(--rlog-search-text);
     font-size: 12px;
     font-family: inherit;
-    line-height: 1; /* Thống nhất với đồng bọn: Ngăn chặn line-height của chữ làm lệch quỹ đạo chiều dọc */
+    line-height: 1; /* Bằng y chang mấy nút khác: Phòng hờ trường hợp line-height chữ nhập vào làm trệch lên/xuống */
     outline: none !important;
     box-shadow: none !important;
     -webkit-appearance: none;
     appearance: none;
     box-sizing: border-box;
-    overflow: hidden;           /* Chữ gõ dài quá thì cắt đuôi thêm ba chấm, tuyệt đối hông làm rách layout nha ✂️ */
+    overflow: hidden;           /* Nội dung tìm kiếm dài quá thì hiện ba chấm, không làm phình vỡ layout */
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 .rlog-search-input::placeholder {
-    color: #9ca3af;
+    color: var(--rlog-search-ph);
 }
 
-/* Bảng hiển thị số hit (Kiểu như 3/18 nè)
-   Đồng bộ với đám nút bên ngoài: Cao y chang, đu bám ngay trên đường xích đạo ngang. 📏
-   Luật xếp hàng: Dạt hết sang phải (justify-content: flex-end) → Cạnh phải mấy con số luôn hôn chụt vào
-   cái mép padding-right của wrapper, lề phải cấm có xê dịch; 🛑
-   Lúc số gầy còm thì bề ngang span = độ mập của chữ (min-width:0), chắt chiu từng tấc đất;
-   Lúc số phát tướng (như 100/100) thì span ủi sang trái, đè bẹp ô nhập liệu (thằng này cao su co lại),
-   Thế là lề phải vẫn nguyên si không hề hấn gì. ✨ */
+/* Hiển thị số lượng match (ví dụ: 3/18)
+   Y hệt mấy nút thao tác bên ngoài: Cùng chiều cao, ngự trị trên trục ngang trung tâm.
+   Cách căn lề: Căn phải (justify-content: flex-end) → Mép phải của số luôn dính vào
+   mép padding-right của wrapper, khoảng cách bên phải thì bất biến;
+   Số mà ngắn thì độ rộng span = độ rộng nội dung chữ (min-width:0), chả lãng phí miếng không gian nào;
+   Số mà dài ra (vd: 100/100) thì span phình sang trái, ép ô nhập liệu (co giãn đàn hồi) thu lại,
+   khoảng cách mép phải vẫn chả bị làm sao. */
 .rlog-search-count {
     font-size: 11px;
-    font-family: inherit; /* Bắt chước chữ của mấy bảng khác đi, Tawa cấm xài font chữ đánh máy (monospace) ở đây! 😤 */
+    font-family: inherit; /* Giống hệt mấy chữ khác trên bảng điều khiển, không xài font monospace */
     font-variant-numeric: tabular-nums;
-    color: #6b7280;
+    color: var(--rlog-text-muted);
     white-space: nowrap;
-    min-width: 0;           /* Độ béo phì do ruột gan quyết định: Số ngắn thì ôm gọn, số dài thì phình sang trái */
-    max-width: 48px;        /* Đóng gông chiều ngang tối đa lại, lấn chiếm không gian của đám nút là tới công chuyện đó 🚫 */
+    min-width: 0;           /* Rộng hẹp hoàn toàn ăn theo nội dung: Số ngắn thì bó sát, số dài thì lấn qua trái */
+    max-width: 48px;        /* Giới hạn độ rộng tối đa, tránh chèn ép chỗ của các nút */
     text-align: right;
-    flex-shrink: 0;         /* Không thèm tham gia tiết mục co dãn: Thà hy sinh ô gõ chữ chứ cục đếm phải nguyên vẹn! */
+    flex-shrink: 0;         /* Không tham gia co rút: Ô nhập liệu bị đè bẹp đầu tiên, bộ đếm thì giữ nguyên */
     display: inline-flex;
     align-items: center;
-    justify-content: flex-end; /* Dạt phải: Số đông lên thì húc sang trái, lề phải hóa đá luôn */
-    align-self: stretch; /* Giãn gân cốt cho cao bằng mấy nút hàng xóm, tự động fit 24px hay 20px luôn 🦒 */
+    justify-content: flex-end; /* Căn phải: Số nhiều lên thì lấn sang trái, lề phải thì bất biến */
+    align-self: stretch; /* Kéo căng cho cao bằng cái nút đứng cạnh, tự động khớp với 24px/20px */
     line-height: 1;
-    overflow: hidden;       /* To quá max-width thì chém bớt ra ba chấm ... */
+    overflow: hidden;       /* Chữ lố qua max-width thì hiện ba chấm */
     text-overflow: ellipsis;
 }
 
-/* Lúc bị phong ấn (Tìm hông ra hoặc có mỗi 1 cái thì mũi tên xám ngoét) 💀 */
+/* Trạng thái bị khóa (Không có kết quả hoặc có mỗi 1 kết quả thì mũi tên bị xám) */
 .rlog-search-prev:disabled,
 .rlog-search-next:disabled {
-    color: #c1c5cc;
+    color: var(--rlog-search-disabled);
     cursor: default;
 }
 
-/* Highlight tìm trúng (Đụng vô chữ thường: Vàng khè luôn nha, sáng tối xài chung 1 màu) 🌟 */
-mark.rlog-search-mark {
-    background: #FFFF00;
-    color: inherit;
-    padding: 0;
-    border-radius: 1px;
-}
-/* Highlight trúng hồng tâm (Cái đang trỏ trúng nè: Cam vàng chói lọi, sáng tối xài chung nốt) 🔥 */
-mark.rlog-search-mark-current {
-    background: #FF9632;
-    color: inherit;
-    padding: 0;
-    border-radius: 1px;
-}
-/* Chừa đường lui lúc cuộn highlight: Nhường đất cho cái thanh tiêu đề dính dính (sticky) ở trên 🛡️ */
+/* Highlight tìm kiếm (Trúng thường màu vàng / Trúng ngay lúc này màu cam, Sáng/Tối xài chung) */
 mark.rlog-search-mark,
 mark.rlog-search-mark-current {
-    scroll-margin-top: 56px;
+    color: var(--rlog-mark-color); /* Chế độ Sáng thì kế thừa màu text, chế độ Tối thì màu đen (Đã set ở Bảng tổng hợp biến) */
+    padding: 0;
+    border-radius: 1px;
+    scroll-margin-top: 56px; /* Offset để dành cho lúc cuộn: Dọn đường chừa chỗ cho thanh tiêu đề sticky */
+}
+mark.rlog-search-mark {
+    background: var(--rlog-mark-bg);
+}
+mark.rlog-search-mark-current {
+    background: var(--rlog-mark-bg-current);
 }
 
-/* Gập lại thì giấu biệt ô tìm kiếm (Tắt gập là tự reset tìm kiếm rồi, cái này Tawa rào trước cho khỏi bị chớp giật thôi) 🙈 */
+/* Thu gọn lại thì giấu biệt ô tìm kiếm (Trạng thái tìm kiếm sẽ bị reset lúc thu gọn, ở đây chỉ thêm khóa để khỏi bị nháy mờ) */
 .rlog-record.collapsed .rlog-search-box {
     display: none;
 }
 
-/* ── Danh sách chứa đống tin nhắn trong ruột nè 📜 ──────────────────────────── */
+/* ── Danh sách tin nhắn bên trong log ──────────────────────────── */
 .rlog-record-body {
-    border-top: 1px solid #e5e7eb;
-    padding: 0 16px; /* Gọt bớt cái padding bên trong đi xíu */
-    background: #f9fafb;
+    border-top: 1px solid var(--rlog-border-body);
+    padding: 0 16px; /* Giảm lề trong */
+    background: var(--rlog-bg-body);
 }
 
 .rmsg-item {
-    position: relative;     /* Làm cái móc neo tọa độ cho thanh cuộn ma pháp (overlay, bám dính vô phần tử này nha) ⚓ */
+    position: relative;     /* Tạo hệ trục tọa độ cho thanh tiến độ overlay (được gắn vào element này) */
     background: transparent;
     border: none;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--rlog-border-msg);
     border-radius: 0;
     margin-bottom: 0;
     padding-bottom: 0;
+}
+/* Chế độ Tối: Giữ nguyên cách code cũ chỉ định riêng màu viền (border:none của last-child sẽ không đè được property dài) */
+#rlog-panel:not(.rlog-light) .rmsg-item {
+    border-bottom-color: var(--rlog-border-msg);
 }
 .rmsg-item:last-child {
     border-bottom: none;
 }
 
-/* Đầu não của tin nhắn */
+/* Thanh tiêu đề tin nhắn */
 .rmsg-header {
     position: sticky;
-    /* Độ dính trần = Chiều cao xác thực của thanh tiêu đề gốc (--rlog-rec-h, do JS tự đi đo rồi nhét vô lúc render/hiển thị/thay đổi size). 🧠
-       Thanh tiêu đề gốc khoái làm trò rớt dòng mập lên khi hẹp (Màn mỏng thì 3~4 dòng), Tawa mà hardcode 40px/36px là đống tiêu đề tin nhắn
-       bị tiêu đề gốc đè bẹp xí, nhìn lỏng le "rớt nhịp"; Cho nên Tawa thả biến tracking theo chiều cao thật, thế là tiêu đề tin nhắn lúc nào cũng đu bám
-       ngay dưới đít thanh tiêu đề gốc, còn việc lăn cuộn thì nhường cho native sticky của trình duyệt xử đẹp! (๑•̀ㅂ•́)و✧ */
+    /* Offset hít trần = Chiều cao thật của thanh tiêu đề log (--rlog-rec-h, do JS tự đo và nhét vào lúc render/show/size-change).
+       Thanh tiêu đề log sẽ thay đổi chiều cao (như rớt xuống 3~4 dòng ở màn hình hẹp), code chết 40px/36px là thanh tiêu đề tin nhắn
+       sẽ bị tiêu đề log đè lên, nhìn như kiểu "không dính nổi trần"; xài biến ăn theo chiều cao thật xong, thanh tiêu đề tin nhắn
+       luôn bám dính ngay dưới thanh tiêu đề log, việc cuộn trượt cứ để trình duyệt dùng lệnh sticky tự lo. */
     top: var(--rlog-rec-h, 40px);
     z-index: 10;
-    background: #f9fafb;
+    background: var(--rlog-bg-msg);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -760,21 +1074,36 @@ mark.rlog-search-mark-current {
     transition: background 0.15s, box-shadow 0.15s;
     box-shadow: inset 0 0 0 0 transparent;
 }
-.rmsg-header:hover { 
-    background: #f2f3f5;
-    box-shadow: inset 2px 0 0 0 rgba(156, 163, 175, 0.9);
+.rmsg-header:hover {
+    background: var(--rlog-bg-msg-hover);
+    box-shadow: inset 2px 0 0 0 color-mix(in srgb, var(--rlog-msg-hover-bar) 90%, transparent);
 }
 
-/* Thêm lớp highlight phụ tùy theo màu sắc của hệ phái (role) nha ✨ */
-.rmsg-item.role-system .rmsg-header:hover { box-shadow: inset 2px 0 0 0 rgba(76, 66, 135, 0.9); }
-.rmsg-item.role-user .rmsg-header:hover { box-shadow: inset 2px 0 0 0 rgba(0, 153, 188, 0.9); }
-.rmsg-item.role-assistant .rmsg-header:hover { box-shadow: inset 2px 0 0 0 rgba(3, 131, 135, 0.9); }
-.rmsg-item.role-tool .rmsg-header:hover { box-shadow: inset 2px 0 0 0 rgba(109, 89, 122, 0.9); }
-.rmsg-item.role-other .rmsg-header:hover { box-shadow: inset 2px 0 0 0 rgba(107, 114, 128, 0.9); }
+/* Dải màu hover của các nhân vật = Lấy 90% độ trong suốt của màu nhân vật đó (Dùng color-mix), sửa biến màu nhân vật cái là dải màu tự đồng bộ luôn */
+.rmsg-item.role-system .rmsg-header:hover { box-shadow: inset 2px 0 0 0 color-mix(in srgb, var(--rlog-role-system) 90%, transparent); }
+.rmsg-item.role-user .rmsg-header:hover { box-shadow: inset 2px 0 0 0 color-mix(in srgb, var(--rlog-role-user) 90%, transparent); }
+.rmsg-item.role-assistant .rmsg-header:hover { box-shadow: inset 2px 0 0 0 color-mix(in srgb, var(--rlog-role-assistant) 90%, transparent); }
+.rmsg-item.role-tool .rmsg-header:hover { box-shadow: inset 2px 0 0 0 color-mix(in srgb, var(--rlog-role-tool) 90%, transparent); }
+.rmsg-item.role-response .rmsg-header:hover { box-shadow: inset 2px 0 0 0 color-mix(in srgb, var(--rlog-role-response) 90%, transparent); }
+.rmsg-item.role-other .rmsg-header:hover { box-shadow: inset 2px 0 0 0 color-mix(in srgb, var(--rlog-role-other) 90%, transparent); }
 
-/* Cái icon gập tin nhắn lại nè */
+/* ── Nhảy nhanh Xuống cuối/Lên đầu: Thanh tiêu đề đích chớp nhẹ một cái ──
+   Nhảy xuống cuối thì nháy ở thanh tiêu đề tin nhắn cuối cùng; còn mấy cú nhảy lên đầu không qua nút (như Có tin nhắn mới/Thu gọn hết/Mở lại) thì nháy ở thanh tiêu đề log trên cùng.
+   Chỉ nháy một lần duy nhất, màu nền đậm hơn lúc hover 1 bậc (nhìn rõ hơn hover nhưng vẫn chỉ là báo hiệu bằng mắt sương sương thôi, chứ không làm kiểu chói lòa báo động).
+   Animation kích hoạt kiểu Trigger: Class do JS linh hoạt đắp vào lúc click nút nhảy xuống cuối (Phải gỡ class + ép reflow để bảo đảm replay được),
+   nháy xong (animationend) thì tự động bị gỡ; lúc bảng điều khiển ẩn đi thì hàm hidePanel cũng tự động dọn rác, tránh lần sau mở lên bị nháy lại. */
+.rlog-record-header.rlog-flash-bottom,
+.rmsg-header.rlog-flash-bottom {
+    animation: rlog-flash-bottom 0.9s ease-in-out;
+}
+@keyframes rlog-flash-bottom {
+    0%, 100% { background-color: transparent; }
+    50% { background-color: var(--rlog-flash-bg); }
+}
+
+/* Icon thu gọn tin nhắn */
 .rmsg-expand-icon {
-    color: #9ca3af;
+    color: var(--rlog-icon-faint);
     font-size: 11px;
     width: 14px;
     text-align: center;
@@ -799,9 +1128,10 @@ mark.rlog-search-mark-current {
 
 .rmsg-tokens {
     font-size: 11px;
-    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', 'Courier New', monospace;
+    font-family: inherit; /* Giống hệt mấy chữ khác trên bảng điều khiển, không xài font monospace */
     font-variant-numeric: tabular-nums;
-    color: #6b7280;
+
+    color: var(--rlog-text-faint);
     margin-left: auto;
     display: inline-flex;
     align-items: center;
@@ -812,7 +1142,7 @@ mark.rlog-search-mark-current {
     background: transparent;
     border: none;
     border-radius: 4px;
-    color: #6b7280;
+    color: var(--rlog-text-muted);
     font-size: 12px;
     cursor: pointer;
     padding: 0;
@@ -824,84 +1154,87 @@ mark.rlog-search-mark-current {
     justify-content: center;
     line-height: 1;
 }
-.rmsg-copy-btn:hover { background: rgba(0, 0, 0, 0.05); color: #111827; }
+.rmsg-copy-btn:hover { background: var(--rlog-hover-bg); color: var(--rlog-text-strong); }
 
-/* Trạng thái tin nhắn bị trói gô lại 📦 */
+/* Trạng thái thu gọn tin nhắn */
 .rmsg-item.collapsed .rmsg-content { display: none; }
 
-/* Thổi bay nút Copy trong tíc tắc 💨 */
+/* Ẩn tịt nút copy ngay tắp lự */
 .rmsg-item.collapsed .rmsg-copy-btn {
     display: none;
 }
 
-/* ── Nhãn dán phái (Role): Chữ là chữ thôi nha 🏷️ ──────── */
+/* ── Nhãn vai trò: Chữ thuần ──────── */
 .role-system {
-    color: #4c4287;
+    color: var(--rlog-role-system);
 }
 .role-user {
-    color: #0099BC;
+    color: var(--rlog-role-user);
 }
 .role-assistant {
-    color: #038387;
+    color: var(--rlog-role-assistant);
 }
 .role-tool {
-    color: #6d597a;
+    color: var(--rlog-role-tool);
+}
+/* Màu tên vai trò Response: Dải màu hover tự động lấy 90% màu y chang, chỉ việc sửa bảng tổng hợp biến là xong */
+.role-response {
+    color: var(--rlog-role-response);
 }
 .role-other {
-    color: #6b7280;
+    color: var(--rlog-role-other);
 }
 
-/* Thịt thà bên trong tin nhắn 🥩 */
+/* Nội dung tin nhắn */
 .rmsg-content {
     margin: 0;
-    padding: 4px 18px 16px 24px; /* Cắt lề phải 18px: Dọn đường cho ma pháp thanh cuộn (overlay) chạy, cấm để chữ với thanh cuộn ôm nhau xà nẹo! 🛑 */
+    padding: 4px 18px 16px 24px; /* Cạnh phải 18px: Dọn đường cho thanh cuộn overlay chui vào, tránh chữ với thanh cuộn chen chúc nhau */
     font-size: 12px;
     line-height: 1.6;
-    color: #374151;
+    color: var(--rlog-text-body);
     white-space: pre-wrap;
     word-break: break-word;
-    /* Tawa sút bay cái quyền ưu tiên font monospace rồi, xài font chữ thường đi, để điện thoại hông có monospace nó khỏi fallback ra cái font serif gớm ghiếc! (｀・ω・´)✧ */
-    font-family: 'Segoe UI', system-ui, -apple-system, Roboto, "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+    font-family: inherit; /* Ghi đè font monospace gốc của <pre>, kế thừa bộ font bảng điều khiển từ #rlog-panel */
     max-height: 450px;
     overflow-y: auto;
     overflow-x: hidden;
-    scrollbar-width: none; /* Firefox: Giấu nhẹm thanh cuộn nhưng tính năng vẫn còn nguyên nha */
+    scrollbar-width: none; /* Firefox: Giấu thanh cuộn gốc */
     background: transparent;
-    position: relative; /* Làm cái móc neo tọa độ cho thanh cuộn ma pháp (overlay, bám dính vô phần tử này nha) ⚓ */
+    position: relative; /* Tạo hệ trục tọa độ cho thanh tiến độ overlay (được gắn vào element này) */
 }
 
-/* ── Tín hiệu báo Copy nè 📋 ────────────────────────────────────── */
-.copy-success { border-color: #10b981 !important; background: #ecfdf5 !important; color: #047857 !important; }
-.copy-fail { border-color: #ef4444 !important; background: #fef2f2 !important; color: #b91c1c !important; }
+/* ── Phản hồi Copy ────────────────────────────────────── */
+.copy-success { border-color: var(--rlog-copy-s-border) !important; background: var(--rlog-copy-s-bg) !important; color: var(--rlog-copy-s-text) !important; }
+.copy-fail { border-color: var(--rlog-copy-f-border) !important; background: var(--rlog-copy-f-bg) !important; color: var(--rlog-copy-f-text) !important; }
 
-/* ── Thanh lăn cuộn (Dành cho phe Ánh Sáng ☀️) ──────────────────────────────── */
-/* Thanh lăn của cái lồng ngoài cùng .rlog-list bị Tawa tàng hình rồi (Ngó qua config của .rlog-list là thấy 🙈) */
-/* Cái thanh cuộn cùi bắp của .rmsg-content cũng bị thủ tiêu luôn, Tawa độ lại bằng thanh cuộn ma pháp overlay rồi (Dòm đống style .rlog-scroll-* ở dưới nha ✨) */
+/* ── Thanh cuộn (Chế độ Sáng) ──────────────────────────────── */
+/* Thanh cuộn của container ngoài cùng .rlog-list đã bị ẩn (Xem cài đặt của .rlog-list nha) */
+/* Thanh cuộn gốc của .rmsg-content đã bị diệt, thay bằng thanh tiến độ overlay (Xem style .rlog-scroll-* bên dưới) */
 .rmsg-content::-webkit-scrollbar,
-.rlog-record-body::-webkit-scrollbar { 
+.rlog-record-body::-webkit-scrollbar {
     display: none;
     width: 0;
     height: 0;
 }
 .rmsg-content::-webkit-scrollbar-track,
-.rlog-record-body::-webkit-scrollbar-track { 
+.rlog-record-body::-webkit-scrollbar-track {
     display: none;
 }
 .rmsg-content::-webkit-scrollbar-thumb,
-.rlog-record-body::-webkit-scrollbar-thumb { 
+.rlog-record-body::-webkit-scrollbar-thumb {
     display: none;
 }
 .rmsg-content::-webkit-scrollbar-thumb:hover,
-.rlog-record-body::-webkit-scrollbar-thumb:hover { 
+.rlog-record-body::-webkit-scrollbar-thumb:hover {
     display: none;
 }
 
-/* ── Chữ lấp ló xem trước nội dung (Cho nó lách vào nằm giữa nhãn nhân vật với đống số token nha 👀) ── */
+/* ── Chữ preview nội dung (Hiện ra lọt thỏm giữa nhãn vai trò và số lượng token) ── */
 .rmsg-preview-text {
     flex: 1;
     min-width: 0;
     font-size: 11px;
-    color: #9ca3af;
+    color: var(--rlog-text-faint);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -911,17 +1244,12 @@ mark.rlog-search-mark-current {
     vertical-align: middle;
 }
 
-/* Ở thế giới Bóng Tối thì chữ xem trước Tawa cho nó rực lên một xíu xiu 🌟 */
-#rlog-panel:not(.rlog-light) .rmsg-preview-text {
-    color: #71717a;
-}
-
-/* ── Công tắc bật/tắt xem trước cắm trên đầu tiêu đề (Trò chơi phân khúc Segmented Control nè 🎛️) ────────── */
+/* ── Công tắc Preview trên thanh tiêu đề (Dạng chia khối Segmented Control) ────────── */
 .rlog-preview-segmented {
     position: relative;
     display: inline-flex;
     align-items: center;
-    background: #e5e7eb;
+    background: var(--rlog-preview-bg);
     border-radius: 4px;
     padding: 2px;
     cursor: pointer;
@@ -930,18 +1258,14 @@ mark.rlog-search-mark-current {
     height: 24px;
     box-sizing: border-box;
 }
-#rlog-panel:not(.rlog-light) .rlog-preview-segmented {
-    background: #3f3f46;
-}
-
-/* Chữ trên các tùy chọn của cục chia khúc */
+/* Chữ các tùy chọn phân đoạn */
 .rlog-seg-option {
     position: relative;
     z-index: 1;
     font-size: 11px;
     font-weight: 600;
     line-height: 1;
-    color: #6b7280;
+    color: var(--rlog-preview-option);
     padding: 0 8px;
     height: 100%;
     display: inline-flex;
@@ -949,52 +1273,762 @@ mark.rlog-search-mark-current {
     justify-content: center;
     transition: color 0.2s ease;
 }
-#rlog-panel:not(.rlog-light) .rlog-seg-option {
-    color: #a1a1aa;
-}
+/* Màu chữ trạng thái đã kích hoạt */
+.rlog-preview-on .rlog-seg-on { color: var(--rlog-preview-active); }
+.rlog-preview-on .rlog-seg-off { color: var(--rlog-preview-inactive); }
 
-/* Đổi màu chữ khi đang sung sức (Active) ✨ */
-.rlog-preview-on .rlog-seg-on { color: #111827; }
-.rlog-preview-on .rlog-seg-off { color: #9ca3af; }
-#rlog-panel:not(.rlog-light) .rlog-preview-on .rlog-seg-on { color: #f4f4f5; }
-#rlog-panel:not(.rlog-light) .rlog-preview-on .rlog-seg-off { color: #52525b; }
+.rlog-preview-off .rlog-seg-off { color: var(--rlog-preview-active); }
+.rlog-preview-off .rlog-seg-on { color: var(--rlog-preview-inactive); }
 
-.rlog-preview-off .rlog-seg-off { color: #111827; }
-.rlog-preview-off .rlog-seg-on { color: #9ca3af; }
-#rlog-panel:not(.rlog-light) .rlog-preview-off .rlog-seg-off { color: #f4f4f5; }
-#rlog-panel:not(.rlog-light) .rlog-preview-off .rlog-seg-on { color: #52525b; }
-
-/* Lớp nền cho cục trượt mượt mà */
+/* Nền cục trượt */
 .rlog-seg-slider {
     position: absolute;
     top: 2px;
     bottom: 2px;
     left: 2px;
     width: calc(50% - 2px);
-    background: #ffffff;
+    background: var(--rlog-preview-slider);
     border-radius: 2px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--rlog-shadow-sm);
     transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
-#rlog-panel:not(.rlog-light) .rlog-seg-slider {
-    background: #52525b;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-}
 
-/* Lúc mở lên là cục trượt phóng cái vèo sang cõi bên phải 👉 */
+/* Bật lên là cục trượt phi sang phải */
 .rlog-preview-on .rlog-seg-slider {
     transform: translateX(100%);
 }
 
-/* ── Cái nốt bấm quyền lực Tổng Công Tắc 👑 ──────────────────────────────── */
-.rlog-master-on {
-    color: #10b981;
-}
-.rlog-master-off {
-    color: #9ca3af;
+/* ── Nút công tắc tổng ────────────────────────────────
+   Màu nút được index.js định luôn bằng style inline (#4caf50 / #999),
+   Chỗ này không cần viết CSS màu nữa, tránh lằng nhằng cắn nhau với style inline lại sinh hiểu lầm */
+
+/* ============================================================
+   Hiệu ứng chuyển đổi Ngày/Đêm (Chuyển mượt mà + Thu phóng nhịp thở thông số độc lập)
+   ============================================================ */
+/* Hiệu ứng nhịp thở Sáng/Tối y chang nhau, gộp chung vào một cái luôn */
+@keyframes rlog-theme-breathe {
+    0% { scale: 1; }
+    50% { scale: 0.985; }
+    100% { scale: 1; }
 }
 
-/* ── Uốn éo mọi tư thế theo màn hình (Responsive) 📱 ──────────────────────────────────────── */
+#rlog-panel.rlog-anim-light {
+    animation: rlog-theme-breathe 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#rlog-panel.rlog-anim-dark {
+    animation: rlog-theme-breathe 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Quá trình chuyển đổi chủ đề ──────────────────────────────────
+   Chỉ mấy cục cấu trúc to bự (Bản thân panel, header, record-body, rmsg-content)
+   mới xài chuyển màu 0.35s, đám lắt nhắt còn lại (badge, số token, nhãn vai trò...)
+   chuyển cái rụp ngay tắp lự, giúp hạ hỏa CPU trên điện thoại cực mạnh.
+   Hiệu ứng thu phóng nhịp thở vẫn giữ y nguyên.
+   Màu của popup cũng chỉ giữ chuyển màu cho mấy cục to. */
+#rlog-panel,
+.rlog-panel-header,
+.rlog-record-header,
+.rlog-record-body,
+.rmsg-header,
+.rmsg-content,
+.rlog-dialog,
+.rlog-dialog-header {
+    transition: background-color 0.35s ease, border-color 0.35s ease, color 0.35s ease, box-shadow 0.35s ease, background 0.35s ease;
+}
+
+/* ============================================================
+   Popup cài đặt Giới hạn Log (Mặc định Sáng)
+   ============================================================ */
+
+/* Lớp phủ — Trùm kín cả trang, nền bán trong suốt
+   Lưu ý: JS đã nhét style inline + !important để cắm cọc vị trí rồi,
+   CSS ở đây chỉ đóng vai trò phương án dự phòng, cũng xài !important để chống bị thuộc tính transform của trang mẹ bóp méo tọa độ */
+.rlog-dialog-overlay {
+    --rlog-dlg-overlay: rgba(0, 0, 0, 0.45); /* Nền lớp phủ (Sáng Tối như nhau; gắn vào thân lớp phủ, popup nằm trong bụng nó) */
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    background: var(--rlog-dlg-overlay) !important;
+    z-index: 9999 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    animation: rlog-dialog-fadein 0.15s ease-out;
+}
+
+@keyframes rlog-dialog-fadein {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Biến màu chủ đề popup (Gắn vào .rlog-dialog; popup chễm chệ trên thẻ body, không thèm ăn ké biến của bảng điều khiển)
+   Chỉnh màu: Đổi 1 dòng ở "Mặc định Sáng" + 1 dòng y hệt ở "Tối" bên dưới */
+.rlog-dialog {
+    --rlog-dlg-bg: #ffffff;              /* Nền thân popup */
+    --rlog-dlg-border: #d1d5db;          /* Viền thân popup */
+    --rlog-dlg-header-bg: #f3f4f6;       /* Nền thanh tiêu đề popup */
+    --rlog-dlg-header-border: #e5e7eb;   /* Viền dưới thanh tiêu đề popup */
+    --rlog-dlg-header-text: #1f2937;     /* Chữ thanh tiêu đề popup */
+    --rlog-dlg-text: #1f2937;            /* Chữ popup mặc định */
+    --rlog-dlg-text-strong: #111827;     /* Chữ nhấn mạnh trên popup (in đậm/chữ trên nút) */
+    --rlog-dlg-desc: #4b5563;            /* Chữ giải thích trên popup */
+    --rlog-dlg-close: #9ca3af;           /* Icon đóng popup */
+    --rlog-dlg-input-bg: #ffffff;        /* Nền ô nhập liệu */
+    --rlog-dlg-input-border: #d1d5db;    /* Viền ô nhập liệu */
+    --rlog-dlg-input-text: #1f2937;      /* Chữ ô nhập liệu */
+    --rlog-dlg-accent: #124e78;          /* Màu viền lúc focus */
+    --rlog-dlg-accent-glow: rgba(18, 78, 120, 0.15); /* Hào quang tỏa viền ngoài lúc focus */
+    --rlog-dlg-shadow: 0 8px 32px rgba(0, 0, 0, 0.15); /* Bóng đổ popup */
+    --rlog-dlg-confirm-text: #374151;    /* Nội dung popup xác nhận */
+    --rlog-dlg-cancel-bg: #f3f4f6;       /* Nền nút Hủy */
+    --rlog-dlg-cancel-text: #374151;     /* Chữ nút Hủy */
+    --rlog-dlg-cancel-border: #d1d5db;   /* Viền nút Hủy */
+    --rlog-dlg-cancel-bg-hover: #e5e7eb; /* Nền hover nút Hủy */
+    --rlog-dlg-cancel-border-hover: #9ca3af; /* Viền hover nút Hủy */
+    --rlog-dlg-confirm-bg: #124e78;      /* Nền nút Xác nhận (Sáng Tối y chang) */
+    --rlog-dlg-confirm-bg-hover: #0f4063;/* Nền hover nút Xác nhận (Sáng Tối y chang) */
+    --rlog-dlg-confirm-border: #0d3a5a;  /* Viền nút Xác nhận (Sáng Tối y chang) */
+    --rlog-dlg-confirm-border-hover: #0a2940; /* Viền hover nút Xác nhận (Sáng Tối y chang) */
+    --rlog-dlg-danger-bg: #dc2626;       /* Nền nút Cảnh báo (Sáng Tối y chang) */
+    --rlog-dlg-danger-bg-hover: #b91c1c; /* Nền hover nút Cảnh báo (Sáng Tối y chang) */
+    --rlog-dlg-danger-border: #b91c1c;   /* Viền nút Cảnh báo (Sáng Tối y chang) */
+    --rlog-dlg-danger-border-hover: #991b1b; /* Viền hover nút Cảnh báo (Sáng Tối y chang) */
+    --rlog-dlg-danger-text: #ffffff;     /* Chữ nút Cảnh báo (Sáng Tối y chang) */
+    --rlog-dlg-danger: #ef4444;          /* Nút đóng popup hover màu đỏ */
+    --rlog-dlg-danger-bg-soft: #fee2e2;  /* Nền hover nút đóng popup */
+}
+.rlog-dialog:not(.rlog-dialog-light) {
+    --rlog-dlg-bg: #18181b;
+    --rlog-dlg-border: #3f3f46;
+    --rlog-dlg-header-bg: #27272a;
+    --rlog-dlg-header-border: #3f3f46;
+    --rlog-dlg-header-text: #f4f4f5;
+    --rlog-dlg-text: #e4e4e7;
+    --rlog-dlg-text-strong: #f4f4f5;
+    --rlog-dlg-desc: #a1a1aa;
+    --rlog-dlg-close: #a1a1aa;
+    --rlog-dlg-input-bg: #27272a;
+    --rlog-dlg-input-border: #52525b;
+    --rlog-dlg-input-text: #f4f4f5;
+    --rlog-dlg-accent: #a6d4f6;
+    --rlog-dlg-accent-glow: rgba(107, 169, 212, 0.15);
+    --rlog-dlg-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    --rlog-dlg-confirm-text: #a1a1aa;
+    --rlog-dlg-cancel-bg: #3f3f46;
+    --rlog-dlg-cancel-text: #e4e4e7;
+    --rlog-dlg-cancel-border: #52525b;
+    --rlog-dlg-cancel-bg-hover: #52525b;
+    --rlog-dlg-cancel-border-hover: #71717a;
+    --rlog-dlg-danger: #f87171;
+    --rlog-dlg-danger-bg-soft: rgba(248, 113, 113, 0.15);
+}
+
+/* Thân popup */
+.rlog-dialog {
+    background: var(--rlog-dlg-bg);
+    border: 1px solid var(--rlog-dlg-border);
+    border-radius: 4px;
+    width: 280px;
+    max-width: 90vw;
+    box-shadow: var(--rlog-dlg-shadow);
+    font-family: 'Segoe UI', system-ui, -apple-system, Roboto, "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+    color: var(--rlog-dlg-text);
+    overflow: hidden;
+}
+
+/* Thanh tiêu đề popup */
+.rlog-dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: var(--rlog-dlg-header-bg);
+    border-bottom: 1px solid var(--rlog-dlg-header-border);
+    color: var(--rlog-dlg-header-text);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    user-select: none;
+}
+
+.rlog-dialog-close {
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: var(--rlog-dlg-close);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    transition: color 0.15s, background 0.15s;
+}
+.rlog-dialog-close:hover { color: var(--rlog-dlg-danger); background: var(--rlog-dlg-danger-bg-soft); }
+
+/* Nội dung thân popup */
+.rlog-dialog-body {
+    padding: 12px;
+}
+
+.rlog-dialog-desc {
+    margin: 0 0 10px 0;
+    font-size: 12px;
+    line-height: 1.55;
+    color: var(--rlog-dlg-desc);
+}
+
+.rlog-dialog-desc strong {
+    color: var(--rlog-dlg-text-strong);
+}
+
+/* Hàng nhập liệu */
+.rlog-dialog-input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.rlog-dialog-input {
+    flex: 1;
+    padding: 6px 10px;
+    border: 1px solid var(--rlog-dlg-input-border);
+    border-radius: 2px;
+    font-size: 13px;
+    color: var(--rlog-dlg-input-text);
+    background: var(--rlog-dlg-input-bg);
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+.rlog-dialog-input:focus {
+    border-color: var(--rlog-dlg-accent);
+    box-shadow: 0 0 0 2px var(--rlog-dlg-accent-glow);
+}
+
+/* Nút Xác nhận */
+.rlog-dialog-btn {
+    padding: 6px 16px;
+    border: 1px solid transparent;
+    border-radius: 2px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.rlog-dialog-btn-confirm {
+    background: var(--rlog-dlg-confirm-bg);
+    color: var(--rlog-dlg-danger-text);
+    border-color: var(--rlog-dlg-confirm-border);
+}
+.rlog-dialog-btn-confirm:hover {
+    background: var(--rlog-dlg-confirm-bg-hover);
+    border-color: var(--rlog-dlg-confirm-border-hover);
+}
+
+/* ============================================================
+   Popup xác nhận đa năng (Xóa sạch log / Tiêu diệt log lẻ)
+   ============================================================ */
+
+/* Nội dung chính của popup */
+.rlog-confirm-message {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--rlog-dlg-confirm-text);
+    margin-bottom: 16px;
+    word-break: break-word;
+}
+
+.rlog-confirm-message strong {
+    color: var(--rlog-dlg-text-strong);
+    font-weight: 600;
+}
+
+/* Hàng nút bấm */
+.rlog-confirm-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+/* Nút Hủy */
+.rlog-dialog-btn-cancel {
+    background: var(--rlog-dlg-cancel-bg);
+    color: var(--rlog-dlg-cancel-text);
+    border-color: var(--rlog-dlg-cancel-border);
+}
+.rlog-dialog-btn-cancel:hover {
+    background: var(--rlog-dlg-cancel-bg-hover);
+    border-color: var(--rlog-dlg-cancel-border-hover);
+}
+
+/* Nút Xóa mang tính nguy hiểm (Xóa lẻ/Quét sạch) */
+.rlog-dialog-btn-danger {
+    background: var(--rlog-dlg-danger-bg);
+    color: var(--rlog-dlg-danger-text);
+    border-color: var(--rlog-dlg-danger-border);
+}
+.rlog-dialog-btn-danger:hover {
+    background: var(--rlog-dlg-danger-bg-hover);
+    border-color: var(--rlog-dlg-danger-border-hover);
+}
+
+/* ============================================================
+   Style Hướng dẫn sử dụng (Product Tour)
+   ============================================================ */
+
+.rlog-tour-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: transparent;
+    z-index: 99998;
+    pointer-events: auto;
+}
+
+.rlog-tour-highlight {
+    position: absolute;
+    border: 2px solid var(--rlog-tour-hl-border);
+    border-radius: 4px;
+    box-shadow: var(--rlog-tour-hl-shadow);
+    pointer-events: none;
+    z-index: 99999;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.rlog-tour-tooltip {
+    position: absolute;
+    width: 260px;
+    background: var(--rlog-tour-bg);
+    border: 1px solid var(--rlog-tour-border);
+    border-radius: 4px;
+    box-shadow: var(--rlog-tour-shadow);
+    padding: 16px;
+    z-index: 100000;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Kế thừa font của bảng điều khiển #rlog-panel, khỏi cần chỉnh riêng */
+    font-size: 13px;
+    color: var(--rlog-tour-text);
+    animation: rlog-dialog-fadein 0.3s ease-out;
+}
+
+.rlog-tour-tooltip::before,
+.rlog-tour-tooltip::after {
+    content: '';
+    position: absolute;
+    bottom: auto;
+    left: var(--arrow-left, 50%);
+    transform: translateX(-50%);
+    border-style: solid;
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Bong bóng nằm dưới, mũi tên chĩa lên */
+.rlog-tour-tooltip::before {
+    top: -7px;
+    border-width: 0 7px 7px 7px;
+    border-color: transparent transparent var(--rlog-tour-border) transparent;
+}
+.rlog-tour-tooltip::after {
+    top: -6px;
+    border-width: 0 6px 6px 6px;
+    border-color: transparent transparent var(--rlog-tour-bg) transparent;
+}
+
+/* Bong bóng nằm trên, mũi tên chĩa xuống */
+.rlog-tour-tooltip.rlog-tour-top::before {
+    top: auto;
+    bottom: -7px;
+    border-width: 7px 7px 0 7px;
+    border-color: var(--rlog-tour-border) transparent transparent transparent;
+}
+.rlog-tour-tooltip.rlog-tour-top::after {
+    top: auto;
+    bottom: -6px;
+    border-width: 6px 6px 0 6px;
+    border-color: var(--rlog-tour-bg) transparent transparent transparent;
+}
+
+.rlog-tour-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: transparent;
+    border: none;
+    color: var(--rlog-tour-close);
+    font-size: 14px;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.rlog-tour-close:hover {
+    background: var(--rlog-tour-close-bg);
+    color: var(--rlog-danger);
+}
+
+.rlog-tour-body {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--rlog-tour-body);
+    margin-bottom: 16px;
+    padding-right: 20px; /* Né không cho chữ đè lên nút Đóng ở góc trên bên phải */
+}
+
+.rlog-tour-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.rlog-tour-dots {
+    display: flex;
+    gap: 4px;
+}
+
+.rlog-tour-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--rlog-tour-dot);
+    transition: background 0.2s ease, transform 0.2s ease;
+    cursor: pointer;
+}
+
+.rlog-tour-dot:hover {
+    transform: scale(1.3);
+}
+
+.rlog-tour-dot.active {
+    background: var(--rlog-tour-dot-active);
+}
+
+.rlog-tour-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.rlog-tour-btn {
+    background: transparent;
+    border: none;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--rlog-tour-btn);
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.rlog-tour-btn:hover {
+    background: var(--rlog-hover-bg);
+    color: var(--rlog-text-strong);
+}
+
+.rlog-tour-btn.rlog-tour-primary {
+    background: var(--rlog-deep-bg);
+    color: #ffffff;
+}
+
+.rlog-tour-btn.rlog-tour-primary:hover {
+    background: var(--rlog-deep-bg-hover);
+    color: #ffffff;
+}
+
+/* ============================================================
+   Thanh tiến độ Overlay (Thanh cuộn tự chế, Tách rời đồ họa và thao tác)
+   Chỉ dùng cho khu vực chứa chữ của tin nhắn .rmsg-content (Tin nhắn nào dài ngoằng mới cần)
+   ============================================================ */
+
+/* ── Khu vực cảm ứng: Trong suốt bay lơ lửng trên mặt chữ, chả tốn tí diện tích nào ─────────── */
+.rlog-scroll-hitbox {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 30px;          /* [Căn chỉnh] Bề rộng khu cảm ứng, để ngón tay chọt trúng dễ dàng */
+    /* Ngụp lặn dưới thanh tiêu đề tin nhắn (.rmsg-header z-index:10): Khi log con cuộn bay ra khỏi màn hình thì nội dung (gồm luôn cả thanh cuộn)
+       sẽ chui luồn dưới thanh tiêu đề sticky, thanh cuộn phải để cho thanh tiêu đề đè lên;
+       Cái chấm tròn đi liền khối với thanh tiến độ, không có được trồi lên trên đâu nha */
+    z-index: 5;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;   /* Ngăn trình duyệt ngứa tay cản trở việc cuộn/thu phóng mặc định */
+}
+
+/* ── Rãnh ray: Đường kẻ mảnh dẻ, Lớp đồ họa ─────────────────────────── */
+.rlog-scroll-track {
+    position: absolute;
+    top: 4px;             /* [Căn chỉnh] Khoảng cách từ rãnh ray đến đỉnh của hitbox. TrackTop của hàm clientYToDotTop trong JS phải ăn rơ theo */
+    right: 4.2px;           /* [Căn chỉnh] Khoảng cách từ rãnh ray đến mép phải hitbox/contentEl. Tác động tới cái vụ căn giữa rãnh. Căn giữa mắt nhìn: Đường kính tròn 5px, rãnh rộng 2px. Cách mép phải 4.2px là canh tay chuẩn đó nha, để 4.5px/5px là bị lệch trục ngay. */
+    bottom: 4px;          /* [Căn chỉnh] Khoảng cách từ rãnh ray đến đáy hitbox. Hàm trackBottom = hitboxH - 4 trong JS phải khớp theo */
+    width: 2px;           /* [Căn chỉnh] Bề rộng rãnh ray. Bo lại thì tàng hình hơn, bè ra thì nhìn rõ hơn */
+    border-radius: 1px;
+    background: var(--rlog-scroll-track);
+    pointer-events: none; /* Cho sự kiện đâm xuyên qua, nhường cho hitbox ôm sô xử lý hết */
+    overflow: hidden;
+}
+
+/* ── Cục trượt: Một nét mảnh mai, độ dài thì JS tùy cơ ứng biến ──────────────── */
+.rlog-scroll-thumb {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;             /* Đắp đầy hết chiều rộng của track (2px), bằng độ rộng với cái rãnh */
+    height: 40px;         /* JS sẽ ghi đè giá trị này một cách vô cùng linh hoạt */
+    min-height: 20px;     /* [Căn chỉnh] Độ dài lùn nhất của cục trượt, chống bị teo nhỏ tới mức không thấy được */
+    border-radius: 1px;
+    background: var(--rlog-scroll-thumb);
+    pointer-events: none;
+    transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* ── Chấm tròn: Mặc định rụt lại tàng hình, đè tay vào là bắn ra, chọt trúng ngay giữa trục rãnh ── */
+.rlog-scroll-dot {
+    position: absolute;
+    right: 3px;
+    width: 5px;           /* [Căn chỉnh] Đường kính chấm tròn, đổi số thì nhớ update luôn right và DOT_HALF bên trong JS nha */
+    height: 5px;          /* [Căn chỉnh] Như trên, bằng y width để nó biến thành hình tròn xoe */
+    border-radius: 50%;
+    background: var(--rlog-scroll-dot);
+    transform: scale(0);   /* Tàng hình mặc định (Thu lại bằng 0) */
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+}
+
+/* ── Tình trạng thao tác: Lúc đè tay/kéo xệch ───────────────────────── */
+/* Lúc khu cảm ứng lên đỉnh, cục trượt bay màu nhường chỗ cho chấm tròn bung lụa */
+.rlog-scroll-hitbox.active .rlog-scroll-thumb {
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+.rlog-scroll-hitbox.active .rlog-scroll-dot {
+    transform: scale(1);
+}
+
+/* Lướt chuột lên khu cảm ứng (Bản Desktop, mồi mắt trước lúc kịp đè) */
+.rlog-scroll-hitbox:hover .rlog-scroll-thumb {
+    background: var(--rlog-scroll-thumb-hover);
+}
+
+/* ============================================================
+   Lớp phủ "Xem toàn văn" (Mặc định Sáng)
+   Trùm kín toàn bộ #rlog-panel (Gói trọn cả thanh tiêu đề gốc), có hẳn thanh tiêu đề sticky riêng + Khu nội dung tha hồ cuộn
+   ============================================================ */
+
+/* ── Container Lớp phủ ─────────────────────────────── */
+.rlog-read-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 30;
+    background: var(--rlog-read-bg);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+/* ── Thanh Tiêu đề (Bám dính sticky, đứng im lúc cuộn nội dung) ───────────── */
+/* Thanh tiêu đề: Ép padding dọc xuống 5px, lùn hơn và bóp gọn hơn so với thanh tiêu đề chính */
+.rlog-read-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Chữ ở bên trái, đám nút thao tác thì dạt hết qua bên phải */
+    gap: 8px;
+    padding: 5px 12px;
+    background: var(--rlog-read-header-bg);
+    border-bottom: 1px solid var(--rlog-border-header);
+    user-select: none;
+    flex-shrink: 0;
+}
+
+/* Chữ tiêu đề bé hơn tiêu đề chính (Chính 15px → Xem toàn văn 13px), chung style font (Xài ké font của bảng điều khiển) */
+.rlog-read-title {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: var(--rlog-read-title);
+    line-height: 1;
+    white-space: nowrap;
+    font-family: inherit;
+}
+
+/* ── Khu thao tác bên phải: Cục trượt đổi dạng + Copy + Đóng đều dẹp qua bên phải ── */
+.rlog-read-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px; /* Ép khoảng cách Nút Copy/Đóng sát nhau, làm tổng thể gọn lỏn */
+    flex-shrink: 0;
+}
+
+/* ── Cục trượt đổi định dạng (Phân đoạn chia rẽ, y xì cách làm công tắc xem trước) ── */
+/* Trượt lên trượt xuống đồng bộ hài hòa cùng nút bấm bị teo nhỏ (20px) */
+.rlog-read-format-toggle {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    background: var(--rlog-read-toggle-bg);
+    border-radius: 4px;
+    padding: 2px;
+    cursor: pointer;
+    user-select: none;
+    flex-shrink: 0;
+    height: 18px; /* Ướm cho vừa cái chiều cao khiêm tốn của thanh tiêu đề "Xem toàn văn" (Thanh chính tận 24px lận) */
+    box-sizing: border-box;
+    font-size: 9px;
+    font-weight: 600;
+    white-space: nowrap; /* Chống chuyện rớt dòng của mấy cái text trong Option */
+}
+
+/* Hai Option chia chác đồng đều bề rộng, text ngoan ngoãn nằm ở giữa;
+   white-space: nowrap chặn họng cái vụ chữ "JSON" bị đè bẹp xuống dòng */
+.rlog-read-seg-option {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    min-width: 0;
+    padding: 0 4px;       /* Bó hẹp lại thêm xíu, để khớp với thanh tiêu đề siêu lùn */
+    height: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    white-space: nowrap;
+    color: var(--rlog-read-option);
+    transition: color 0.2s ease;
+}
+.rlog-read-seg-slider {
+    position: absolute;
+    top: 2px;
+    bottom: 2px;
+    left: 2px;
+    width: calc(50% - 2px);
+    background: var(--rlog-read-slider);
+    border-radius: 2px;
+    box-shadow: var(--rlog-shadow-sm);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+/* Dạng Dọn dẹp: Cục trượt quẹo trái, text Dọn dẹp sáng bừng */
+.rlog-read-format-toggle.formatted .rlog-read-seg-formatted { color: var(--rlog-read-active); }
+.rlog-read-format-toggle.formatted .rlog-read-seg-raw { color: var(--rlog-read-inactive); }
+/* Dạng Thô: Cục trượt dạt phải, text JSON thô sáng bừng */
+.rlog-read-format-toggle.raw .rlog-read-seg-raw { color: var(--rlog-read-active); }
+.rlog-read-format-toggle.raw .rlog-read-seg-formatted { color: var(--rlog-read-inactive); }
+.rlog-read-format-toggle.raw .rlog-read-seg-slider {
+    transform: translateX(100%);
+}
+
+/* ── Nút Lên Đầu / Xuống Cuối / Copy / Đóng ─────────────
+   Bé xíu hơn nút của thanh tiêu đề gốc (28px) nha: Chỉ 20×20 thôi, để lọt thỏm vào thanh "Xem toàn văn" đang lùn xịt */
+.rlog-read-jump-top-btn,
+.rlog-read-jump-bottom-btn,
+.rlog-read-copy-btn,
+.rlog-read-close-btn {
+    padding: 0;
+    width: 20px;
+    height: 20px;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: var(--rlog-read-btn);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    transition: background 0.15s, color 0.15s;
+    flex-shrink: 0;
+}
+/* Cỡ chữ: Nút nhảy/Copy thì 11px, Nút Đóng thì nhỉnh hơn tẹo 14px */
+.rlog-read-jump-top-btn,
+.rlog-read-jump-bottom-btn,
+.rlog-read-copy-btn {
+    font-size: 11px;
+}
+.rlog-read-close-btn {
+    font-size: 14px;
+}
+/* Cục trượt với đám nút không cùng chủng loại (Đứa thì phân đoạn bo tròn, đứa thì nút vuông icon),
+   khoảng cách sẽ do ông nút "Lên đầu" nằm kế bên gánh vác; Đám Lên Đầu ↔ Xuống Cuối ↔ Copy ↔ Đóng thì chui rúc vào nhau cực khít */
+.rlog-read-jump-top-btn {
+    margin-left: 6px;
+}
+.rlog-read-jump-top-btn:hover,
+.rlog-read-jump-bottom-btn:hover,
+.rlog-read-copy-btn:hover {
+    background: var(--rlog-hover-bg);
+    color: var(--rlog-text-strong);
+}
+.rlog-read-close-btn:hover {
+    color: var(--rlog-danger);
+    background: var(--rlog-danger-bg);
+}
+
+/* ── Chỗ chứa Nội dung (Cuộn được, mượn tạm style chữ của .rmsg-content) ── */
+.rlog-read-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 12px 16px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--rlog-read-text);
+    white-space: pre-wrap;
+    word-break: break-word;
+    /* Kế thừa font của bảng điều khiển #rlog-panel, khỏi cần chỉnh riêng */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.rlog-read-content::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+}
+/* Mượn xài thanh cuộn Overlay: Vùng cảm ứng ngay chỗ nội dung (30px) */
+.rlog-read-content {
+    position: relative;
+}
+
+/* ── Nẹp ngang đáy chống đứt đứt ──────────────────────────────
+   Y như đáy của bảng điều khiển chính: Cấm vẽ đường nét liền, nhường lại viền mỏng tang cho border của #rlog-panel bao trọn;
+   Sọc ngang này là khoảng trắng 6px tàng hình (tương đồng padding-bottom: 6px của .rlog-panel-body ở bảng chính),
+   phòng lúc cuộn văn bản đập mạnh xuống đáy bị đường viền cắt phăng mất */
+.rlog-read-footer {
+    flex-shrink: 0;
+    height: 6px;
+    background: transparent;
+}
+
+/* ============================================================
+   Tương thích Di động (Cột mốc duy nhất: max-width: 768px)
+   Gom toàn bộ luật di động vào chung chảo này, đổi mốc thì sửa một phát ăn liền ở đây.
+   Chú ý: Bỏ tiêu hai cái luật "cắt xén độ dài hiệu ứng đổi theme" rồi nha ——
+   Tại tụi nó nằm phè phỡn trước lệnh gộp 0.35s, hóa ra vô dụng ngay từ lúc sinh ra;
+   Nếu muốn Di động đổi màu cái vèo cho lẹ, thì viết đè hẳn một lệnh transition dài ngoằng xuống bên dưới là xong.
+   ============================================================ */
 @media (max-width: 768px) {
     #rlog-panel {
         width: 100vw;
@@ -1010,13 +2044,22 @@ mark.rlog-search-mark-current {
         gap: 4px;
     }
     .rlog-panel-header h4 {
-        font-size: 13px;
+        font-size: 13px; /* Cỡ chữ tiêu đề di động (Desktop 15px → 13px); Còn cỡ chữ của số thì để .rlog-title-count bên dưới xử lý độc lập */
+    }
+    /* Điều chỉnh bộ đếm trên di động (.rlog-title-count): Chỉ chừa lại mấy dòng khác với bản desktop,
+       còn lại auto xài sài ké desktop hết nha; Chế độ Tối màu mè thì bảng tổng hợp biến đã lo, không cần nhọc lòng */
+    .rlog-title-count {
+        margin-left: 3px; /* Khoảng cách đến chữ tiêu đề bên trái (Bản Di động, Desktop là 4px) */
+        padding: 2px 4px 2px; /* Vùng nhấn / Nền lúc hover (Bản Di động, Desktop là 2px 5px 4px): Lề trên lề dưới chi phối số nằm dọc kiểu gì trên cái nền màu, nhìn hơi cao thì tăng lề trên/chém lề dưới đi, còn lùn thì làm ngược lại */
+        font-size: 10.5px; /* Chữ số bộ đếm (Bản Di động, Desktop là 13px) */
+        position: relative; /* Điều kiện để định vị top, cứ để lại nhỡ muốn nắn nót thêm */
+        top: 0px; /* Căn dọc nhè nhẹ (Bản Di động, Desktop là 1px) */
     }
     .rlog-header-actions {
         gap: 3px;
-        /* Canh phải lúc vỡ hàng trên di động nè: Lúc mà header bị cái flex-wrap: wrap quật, đống đồ chơi dòng hai rớt uỵch xuống,
-           Tawa chỉ cần niệm chú margin-left: auto là sút nó sang phải hết. Nhờ thằng h4 đã ăn no nê chỗ trống, thanh công cụ lúc lộn nhào xong
-           độc chiếm 1 hàng, margin-left: auto sẽ thực hiện căn phải một cách hoàn hảo! (๑•̀ㅂ•́)و✧ */
+        /* Căn phải khi bị văng dòng trên di động: Lúc header flex-wrap: wrap kích hoạt, đám dòng hai bị đùn xuống,
+           mượn margin-left: auto để hất tụi nó quăng qua tay phải. Vì h4 nó độc chiếm chả chừa miếng không gian nào, nên hất dòng phát là đám thao tác chiếm trọn một mình một dòng luôn,
+           quăng cho nó margin-left: auto là lùa dính lề phải ngon lành. */
         margin-left: auto;
     }
     .rlog-header-btn {
@@ -1034,7 +2077,7 @@ mark.rlog-search-mark-current {
     .rlog-record-info {
         gap: 4px;
     }
-    .rlog-char-name { font-size: 12px; }
+    .rlog-char-name { font-size: 12px; top: 0; } /* Tên nhân vật trên di động không thèm kiễng chân nữa (Nhiều người soi ra -1px căn dọc bằng mắt thất bại) */
     .rlog-time,
     .rlog-total-tokens,
     .rlog-model-badge {
@@ -1047,6 +2090,7 @@ mark.rlog-search-mark-current {
     .rlog-read-full-btn,
     .rlog-msg-collapse-btn,
     .rlog-msg-expand-btn,
+    .rlog-jump-bottom-btn,
     .rlog-delete-record-btn,
     .rlog-search-btn {
         width: 20px;
@@ -1055,17 +2099,17 @@ mark.rlog-search-mark-current {
     }
     .rlog-toggle-icon { font-size: 12px; width: 16px; height: 20px; }
 
-    /* Đồng bộ chiều cao cái rọ chứa nút thao tác ở mobile (Desktop xài nút 24px thì rọ 24px, xuống mobile nút bị teo còn 20px nên phải phủ đầu đồng bộ luôn 🔨) */
+    /* Chiều cao thùng chứa chỗ thao tác di động nhập chung với đám nút (Desktop 24px đi với nút 24px, di động đẻ ra nút 20px thì cái thùng cũng phải ốm đi cho tương xứng) */
     .rlog-record-actions {
         min-height: 20px;
     }
 
-    /* Nắn nót ô tìm kiếm cho vừa vặn ở mobile (Ép nút thành 20x20 hết, hòa đồng với anh em nút thao tác bên ngoài 🤝) */
+    /* Ướm đồ cho ô tìm kiếm trên di động (Nút nào cũng 20x20, y chang bọn nút lải nhải bên ngoài) */
     .rlog-search-box {
         gap: 0;
     }
-    /* Bên mobile, ô tìm kiếm bò ra từ mép phải của kính lúp (20px = độ mập kính lúp, ép xác vô hông cho hở khe nào);
-       Mũi tên gập trên điện thoại 16px cộng gap 4px = 20px, Tawa cho giãn sang phải 20px để đo ván với mép kia luôn 📏 */
+    /* Ô nhập kiếm trên di động bám rễ từ bờ phải cái Kính lúp (20px = độ rộng lúp, ôm trọn luôn);
+       Mũi tên thu gọn di động là 16px bè cộng 4px rãnh = 20px, phình sang phải 20px cho nó bằng thẳng lối */
     .rlog-record.rlog-searching .rlog-search-box {
         left: 20px;
         right: -20px;
@@ -1078,8 +2122,8 @@ mark.rlog-search-mark-current {
     }
     .rlog-search-input-wrap {
         width: 90px;
-        min-width: 0;       /* Xuống điện thoại thì thân hình cũng dẻo dai co dãn 100% nhe 🤸‍♀️ */
-        max-width: 180px;   /* Lên đời điện thoại to dư chỗ thì cũng nới lỏng ra xíu, nhường cho ô text phình to ra thêm xíu xiu 🎈 */
+        min-width: 0;       /* Trên di động thì cũng vẫn thun lún cực kỳ đàn hồi */
+        max-width: 180px;   /* Đất trống trên di động thì cũng phóng tay lên, buff cho ô nhập to tướng thêm tí */
         height: 20px;
         border-radius: 3px;
     }
@@ -1089,8 +2133,8 @@ mark.rlog-search-mark-current {
     }
     .rlog-search-count {
         font-size: 10px;
-        min-width: 0;           /* Trên mobile độ mập cũng do đống ruột bên trong toàn quyền quyết định */
-        max-width: 44px;        /* Vì di động ốm nhom, Tawa bóp nó lại để hông lấn chiếm đất của mấy anh nút kia 🛑 */
+        min-width: 0;           /* Bản di động độ phình thu vẫn ngó vào nội dung mà làm tới */
+        max-width: 44px;        /* Đất trên di động lụi hơn, ngăn ép không cho ăn hiếp chỗ mấy cái nút */
     }
     .rlog-record-header {
         padding: 8px 10px;
@@ -1099,7 +2143,7 @@ mark.rlog-search-mark-current {
         padding: 0 10px;
     }
     .rmsg-header {
-        top: var(--rlog-rec-h, 36px); /* Biến ảo khôn lường: Luôn bằng chiều cao thật của thanh tiêu đề gốc (JS mà xoay layout là Tawa update liền ⚡) */
+        top: var(--rlog-rec-h, 36px); /* Tùy biến: Y hệt chiều cao thực tế của thanh tiêu đề log (Update ngay lúc JS nhào lộn layout) */
         gap: 6px;
         margin: 0 -10px;
         padding: 4px 10px;
@@ -1118,7 +2162,7 @@ mark.rlog-search-mark-current {
     }
     .rmsg-content {
         font-size: 11px;
-        padding: 4px 16px 14px 20px; /* Cắt lề phải 16px: Dọn đường cho ma pháp thanh cuộn (overlay) chạy, cấm để chữ với thanh cuộn ôm nhau xà nẹo! 🛑 */
+        padding: 4px 16px 14px 20px; /* Lề bên phải 16px: Dọn dẹp chỗ trống đón thanh cuộn lơ lửng bên hông phải nha, kẻo chữ đè lên thanh cuộn chen bẹp cả người */
         max-height: 350px;
     }
     .rlog-resize-grip {
@@ -1128,1254 +2172,49 @@ mark.rlog-search-mark-current {
     .rlog-resize-grip::after {
         border-width: 0 0 10px 10px;
     }
-    .rlog-list {
-        padding: 0;
-    }
-    .rlog-record {
-        margin-bottom: 0;
-    }
 
-    /* Cắt xén bớt thời gian đổi theme trên điện thoại, gánh bớt còng lưng cho máy render mệt nghỉ 💨 */
-    #rlog-panel,
-    .rlog-panel-header,
-    .rlog-record-header,
-    .rlog-record-body,
-    .rmsg-header,
-    .rmsg-content,
-    .rlog-dialog,
-    .rlog-dialog-header {
-        transition-duration: 0.15s;
-    }
-    #rlog-panel.rlog-anim-light,
-    #rlog-panel.rlog-anim-dark {
-        animation-duration: 0.2s;
-    }
-
-    /* Rút phích cắm hiệu ứng chuyển cảnh tạm thời lúc đổi theme (Riêng cho điện thoại thôi): 🔌
-       Mỗi lần bung lụa đống tin nhắn, mà bắt hàng trăm mảnh ghép cùng pha màu chầm chậm 0.35s thì đơ máy là cái chắc! 😱
-       Tawa nhét cái class này vô qua JS trước lúc đổi theme, xong táng thêm 2 nháy RAF (requestAnimationFrame) rồi sút nó ra. 🚀
-       Còn PC khỏe thì cứ giữ hiệu ứng pha màu chói lóa đi, hông áp dụng luật này. 🖥️✨ */
+    /* Đóng băng hiệu ứng mượt khi sang theme tạm thời (Đặc quyền riêng cho bản di động):
+       Mở một đống thư tín, trăm đứa rủ nhau đổi sắc 0.35s là thế nào cũng tụt huyết áp FPS.
+       JS dán cái ấn chú class này trước giờ G lúc sang theme, trôi qua hai lượt RAF mới xé ấn giải nguyền.
+       Còn bọn máy tính khỏe thì cứ tha hồ nhởn nhơ chớp đổi màu mướt mượt nha. */
     .rlog-theme-transitioning *,
     .rlog-theme-transitioning {
         transition: none !important;
     }
 
-    /* Khóa mõm cái hiệu ứng lướt lướt của ngăn kéo "Thêm nữa" (Điện thoại chịu trận thôi nha): 🚫
-       Lúc lôi ngăn kéo ra từ 0→300px mất 0.3s, nó sẽ quậy đục nước cái flex layout của đỉnh panel liên tục,
-       Mà điện thoại thì header rớt dòng tá lả, báo hại chiều cao body panel bị giật cục lia lịa,
-       Thế là hàng trăm anh tiêu đề dính dính (.rmsg-header) bị ép sắp xếp lại từng khung hình một, giật tung chảo luôn! 😵‍💫
-       Tawa cấm cửa transition thì việc kéo/đóng làm cái rẹt là xong, chỉ kích reflow đúng một nhát, bao mượt mà luôn nha! 😎
-       Đám desktop PC mạnh bạo thì Tawa vẫn cho trượt ngang mượt mà, hông xi nhê gì sất. 🖥️✨
-       Kệ xác cách hiển thị cũ (banh ra trên một hàng), chỉ bóp cổ cái transition thôi. 🤫 */
+    /* Tử hình animation kéo ngăn kéo "Nhiều Hơn" (Chỉ phạt bản Di Động):
+       Ngăn kéo bung lụa với max-width giãn 0→300px mất 0.3s, xới tung layout flex của phần đầu Panel,
+       Di động lạng lách qua lại header nhúng nhảy bẻ góc làm ruột gan body Panel thụt thụt lên xuống triền miên,
+       Trăm cái nhãn .rmsg-header sticky khóc lóc xếp hàng lại theo từng frame ròng rã, giật chới với!
+       Diệt trừ animation này đi, bấm là ló mặt ra thụt vô liền, báo reflow một phát duy nhất, thanh lịch hơn khối.
+       Đám Desktop đại bàng thì vẫn cứ giữ lướt ngang mướt mắt đi.
+       Kiểu mặt mũi giữ y thói cũ (Bung nằm thẳng hàng), chỉ tát chết mượt mà thôi nha. */
     .rlog-more-drawer {
         transition: none;
     }
-}
 
-/* ============================================================
-   Phép thuật đổi máu Ngày Đêm (Pha màu cực mướt + Biến hình thu phóng độc lập nha ✨)
-   ============================================================ */
-@keyframes rlog-theme-breathe-to-light {
-    0% { scale: 1; }
-    50% { scale: 0.985; }
-    100% { scale: 1; }
-}
+/* ── Popup nhào lộn thành bản Di động ──────────────────────────────── */
+/* Kích cỡ mùng chăn đã chốt cứng 100vw/100vh trong lõi JS qua dòng inline style chêm !important rồi,
+   Di động khỏi phải xào nấu lại trò định hướng làm gì. Cứ rờ vào bề rộng với khóa an toàn chống dồn cục của Popup là ổn áp. */
 
-@keyframes rlog-theme-breathe-to-dark {
-    0% { scale: 1; }
-    50% { scale: 0.985; }
-    100% { scale: 1; }
-}
-
-#rlog-panel.rlog-anim-light {
-    animation: rlog-theme-breathe-to-light 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* ── Chuyển cảnh lúc sang tên đổi họ (Theme Transition) ──────────────────────────────────
-   Chỉ vớt vát mấy khúc xương sống bự bự (Bản thân cái panel, cái đầu header, body chứa log, với xác tin nhắn)
-   Giữ lại phép đổi màu ngâm 0.35s, đám lâu la còn lại (mấy cái tem badge, cục số token, bảng tên nhân vật...)
-   Bắt đổi màu trong một cái búng tay, cho di động đỡ thở dốc lúc render! (๑•̀ㅂ•́)و✧
-   Mấy cái phép hô hấp thu phóng thì để yên đó cấm đụng! 🌬️
-   Cửa sổ chình ình hiện ra cũng chỉ cho mấy cục bự từ từ đổi màu thôi nha. 🖼️ */
-#rlog-panel,
-.rlog-panel-header,
-.rlog-record-header,
-.rlog-record-body,
-.rmsg-header,
-.rmsg-content,
-.rlog-dialog,
-.rlog-dialog-header {
-    transition: background-color 0.35s ease, border-color 0.35s ease, color 0.35s ease, box-shadow 0.35s ease, background 0.35s ease;
-}
-
-/* ── Độ lại cái content-visibility cho cháy máy 🔥 ───────────────────────
-   Bản ghi nào đang bị cuốn gọn thì Tawa sút bay khâu render luôn, dẹp mớ rác layout/paint cho đám tàng hình đi! 🗑️ */
-.rlog-record.collapsed .rlog-record-body {
-    content-visibility: auto;
-    contain-intrinsic-size: 0 0;
-}
-
-/* ============================================================
-   Giao diện cõi Âm (Night Mode / Modern Neutral Zinc đen thui 😎)
-   Thổi bay class rlog-light là sang trang (Nghĩa là mặc định Tawa cho sáng sủa, vứt class đi là tối hù) 🌚
-   ============================================================ */
-#rlog-panel.rlog-anim-dark {
-    animation: rlog-theme-breathe-to-dark 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-#rlog-panel:not(.rlog-light) {
-    background: #18181b; /* zinc-900 */
-    border-color: #3f3f46; /* zinc-700 */
-    color: #e4e4e7; /* zinc-200 */
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
-}
-
-#rlog-panel:not(.rlog-light) .rlog-panel-header {
-    background: #27272a; /* zinc-800 */
-    border-bottom-color: #3f3f46;
-}
-
-#rlog-panel:not(.rlog-light) .rlog-panel-header h4 {
-    color: #f4f4f5; /* zinc-50 */
-}
-#rlog-panel:not(.rlog-light) .rlog-title-text {
-    color: #f4f4f5;
-}
-#rlog-panel:not(.rlog-light) .rlog-title-text:hover { color: #6ba9d4; }
-#rlog-panel:not(.rlog-light) .rlog-title-count {
-    color: #71717a; /* zinc-500 */
-    background: transparent;
-}
-#rlog-panel:not(.rlog-light) .rlog-title-count:hover {
-    color: #e4e4e7;
-    background: rgba(255, 255, 255, 0.08);
-}
-
-#rlog-panel:not(.rlog-light) .rlog-header-btn {
-    color: #a1a1aa;
-    background: transparent;
-}
-#rlog-panel:not(.rlog-light) .rlog-header-btn:hover,
-#rlog-panel:not(.rlog-light) #rlog-more-btn.active-drawer-btn {
-    color: #f4f4f5;
-    background: rgba(255,255,255,0.08);
-}
-
-#rlog-panel:not(.rlog-light) #rlog-clear-btn:hover {
-    color: #f87171; 
-    background: rgba(248, 113, 113, 0.15); 
-}
-
-#rlog-panel:not(.rlog-light) #rlog-close-btn { 
-    color: #a1a1aa; 
-    background: transparent;
-}
-#rlog-panel:not(.rlog-light) #rlog-close-btn:hover { 
-    color: #f87171; 
-    background: rgba(248, 113, 113, 0.15); 
-}
-
-#rlog-panel:not(.rlog-light) .rlog-empty { color: #71717a; }
-
-/* Cái núm resize trong bóng đêm 📐 */
-#rlog-panel:not(.rlog-light) .rlog-resize-grip::after {
-    border-color: transparent transparent #52525b transparent;
-}
-#rlog-panel:not(.rlog-light) .rlog-resize-grip:hover::after {
-    border-color: transparent transparent #a1a1aa transparent;
-}
-
-/* Bản ghi thuộc hắc ám */
-#rlog-panel:not(.rlog-light) .rlog-record {
-    background: transparent;
-    border-color: rgba(255, 255, 255, 0.08);
-}
-#rlog-panel:not(.rlog-light) .rlog-record-header {
-    background: #18181b;
-}
-#rlog-panel:not(.rlog-light) .rlog-record-header:hover {
-    background: #212124;
-    box-shadow: inset 2px 0 0 0 #6ba9d4;
-}
-#rlog-panel:not(.rlog-light) .rlog-char-name { color: #6ba9d4; }
-#rlog-panel:not(.rlog-light) .rlog-time { color: #a1a1aa; }
-#rlog-panel:not(.rlog-light) .rlog-total-tokens {
-    color: #a1a1aa;
-}
-
-/* Theme tối hù hù 🌙 */
-#rlog-panel:not(.rlog-light) .rlog-total-tokens .rlog-token-tier-0 { color: #6A9BC4; } /* <4K */
-#rlog-panel:not(.rlog-light) .rlog-total-tokens .rlog-token-tier-1 { color: #5BA9B4; } /* 4K-8K */
-#rlog-panel:not(.rlog-light) .rlog-total-tokens .rlog-token-tier-2 { color: #58AA91; } /* 8K-16K */
-#rlog-panel:not(.rlog-light) .rlog-total-tokens .rlog-token-tier-3 { color: #7EAE55; } /* 16K-32K */
-#rlog-panel:not(.rlog-light) .rlog-total-tokens .rlog-token-tier-4 { color: #B0A74D; } /* 32K-64K */
-#rlog-panel:not(.rlog-light) .rlog-total-tokens .rlog-token-tier-5 { color: #D08755; } /* 64K-128K */
-#rlog-panel:not(.rlog-light) .rlog-total-tokens .rlog-token-tier-6 { color: #ba4e49; } /* 128K-200K */
-
-/* >200K Đỏ thẫm + Nhịp đập chớp nháy từ từ (Animation thuần color nha, Tawa cấm đụng tới filter! 🚨) */
-#rlog-panel:not(.rlog-light) .rlog-total-tokens .rlog-token-tier-7 {
-    color: #b64048;
-    animation: rlog-token-pulse-dark 4s ease-in-out infinite;
-}
-
-@keyframes rlog-token-pulse-dark {
-    0%, 88%   { color: #b64048; } /* Đứng yên */
-    95%       { color: #d34444; } /* Phát sáng nè ✨ */
-    100%      { color: #b64048; } /* Về như cũ */
-}
-#rlog-panel:not(.rlog-light) .rlog-source-native {
-    color: #a1a1aa; /* emerald-400 -> muted gray */
-}
-#rlog-panel:not(.rlog-light) .rlog-source-native .rlog-status-dot {
-    background-color: #34d399;
-}
-#rlog-panel:not(.rlog-light) .rlog-source-plugin {
-    color: #a1a1aa; /* amber-400 -> muted gray */
-}
-#rlog-panel:not(.rlog-light) .rlog-source-plugin .rlog-status-dot {
-    background-color: #fbbf24;
-}
-#rlog-panel:not(.rlog-light) .rlog-model-badge {
-    color: #a1a1aa; /* violet-400 -> muted gray */
-}
-#rlog-panel:not(.rlog-light) .rlog-record-info > span:not(:first-child):not(.rlog-source-badge)::before {
-    background-color: #52525b;
-}
-#rlog-panel:not(.rlog-light) .rlog-toggle-icon { color: #a1a1aa; }
-
-#rlog-panel:not(.rlog-light) .rlog-read-full-btn,
-#rlog-panel:not(.rlog-light) .rlog-msg-collapse-btn,
-#rlog-panel:not(.rlog-light) .rlog-msg-expand-btn,
-#rlog-panel:not(.rlog-light) .rlog-delete-record-btn {
-    background: transparent;
-    color: #a1a1aa;
-}
-#rlog-panel:not(.rlog-light) .rlog-read-full-btn:hover,
-#rlog-panel:not(.rlog-light) .rlog-msg-collapse-btn:hover,
-#rlog-panel:not(.rlog-light) .rlog-msg-expand-btn:hover {
-    background: rgba(255, 255, 255, 0.08);
-    color: #f4f4f5;
-}
-
-#rlog-panel:not(.rlog-light) .rlog-delete-record-btn:hover { 
-    color: #f87171; 
-    background: rgba(248, 113, 113, 0.15);
-}
-
-/* Đoạn chat ở cõi âm */
-#rlog-panel:not(.rlog-light) .rlog-record-body {
-    background: #121214;
-    border-top-color: rgba(255, 255, 255, 0.05);
-}
-#rlog-panel:not(.rlog-light) .rmsg-item {
-    background: transparent;
-    border-bottom-color: rgba(255, 255, 255, 0.04);
-}
-#rlog-panel:not(.rlog-light) .rmsg-header {
-    background: #121214;
-}
-#rlog-panel:not(.rlog-light) .rmsg-header:hover {
-    background: #18181a;
-    box-shadow: inset 2px 0 0 0 rgba(161, 161, 170, 0.9);
-}
-
-/* Quét cái highlight phụ thuộc vô hệ phái của từng role nha (Dark mode xịn xò ✨) */
-#rlog-panel:not(.rlog-light) .rmsg-item.role-system .rmsg-header:hover { box-shadow: inset 2px 0 0 0 rgba(156, 147, 210, 0.9); }
-#rlog-panel:not(.rlog-light) .rmsg-item.role-user .rmsg-header:hover { box-shadow: inset 2px 0 0 0 rgba(92, 192, 219, 0.9); }
-#rlog-panel:not(.rlog-light) .rmsg-item.role-assistant .rmsg-header:hover { box-shadow: inset 2px 0 0 0 rgba(88, 199, 201, 0.9); }
-#rlog-panel:not(.rlog-light) .rmsg-item.role-tool .rmsg-header:hover { box-shadow: inset 2px 0 0 0 rgba(178, 164, 191, 0.9); }
-#rlog-panel:not(.rlog-light) .rmsg-item.role-other .rmsg-header:hover { box-shadow: inset 2px 0 0 0 rgba(161, 161, 170, 0.9); }
-
-#rlog-panel:not(.rlog-light) .rmsg-expand-icon { color: #a1a1aa; }
-#rlog-panel:not(.rlog-light) .rmsg-tokens { color: #a1a1aa; }
-#rlog-panel:not(.rlog-light) .rmsg-copy-btn {
-    color: #a1a1aa;
-    background: transparent;
-}
-#rlog-panel:not(.rlog-light) .rmsg-copy-btn:hover {
-    background: rgba(255, 255, 255, 0.08);
-    color: #f4f4f5;
-}
-#rlog-panel:not(.rlog-light) .rmsg-content {
-    color: #e4e4e7;
-    background: transparent;
-}
-
-/* Bảng tên nhân vật bản Dark Mode */
-#rlog-panel:not(.rlog-light) .role-system {
-    color: #9c93d2;
-}
-#rlog-panel:not(.rlog-light) .role-user {
-    color: #5cc0db;
-}
-#rlog-panel:not(.rlog-light) .role-assistant {
-    color: #58c7c9;
-}
-#rlog-panel:not(.rlog-light) .role-tool {
-    color: #b2a4bf;
-}
-#rlog-panel:not(.rlog-light) .role-other {
-    color: #a1a1aa;
-}
-
-/* Tín hiệu báo Copy trong bóng tối */
-#rlog-panel:not(.rlog-light) .copy-success { border-color: #10b981 !important; background: rgba(16, 185, 129, 0.1) !important; color: #34d399 !important; }
-#rlog-panel:not(.rlog-light) .copy-fail { border-color: #ef4444 !important; background: rgba(239, 68, 68, 0.1) !important; color: #f87171 !important; }
-
-/* Nút quyền lực Cấm Thuật ở bóng tối 🌑 */
-#rlog-panel:not(.rlog-light) .rlog-master-on {
-    color: #10b981;
-}
-#rlog-panel:not(.rlog-light) .rlog-master-off {
-    color: #a1a1aa;
-}
-
-/* Phép dò tìm ở thế giới Ngầm 🔍 */
-#rlog-panel:not(.rlog-light) .rlog-search-btn {
-    background: transparent;
-    color: #a1a1aa;
-}
-#rlog-panel:not(.rlog-light) .rlog-search-btn:hover {
-    background: rgba(255, 255, 255, 0.08);
-    color: #f4f4f5;
-}
-/* Lúc mở con mắt dò tìm trong đêm, kính lúp sẽ rực lên (Bắt chước màu xanh u ám của tên nhân vật cho xuyệt tông nha ✨) */
-#rlog-panel:not(.rlog-light) .rlog-record.rlog-searching .rlog-search-btn {
-    color: #6ba9d4;
-}
-#rlog-panel:not(.rlog-light) .rlog-record.rlog-searching .rlog-search-btn:hover {
-    background: rgba(107, 169, 212, 0.15);
-    color: #8bbde0;
-}
-
-#rlog-panel:not(.rlog-light) .rlog-search-prev,
-#rlog-panel:not(.rlog-light) .rlog-search-next {
-    background: transparent;
-    color: #a1a1aa;
-}
-#rlog-panel:not(.rlog-light) .rlog-search-prev:hover:not(:disabled),
-#rlog-panel:not(.rlog-light) .rlog-search-next:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.08);
-    color: #f4f4f5;
-}
-
-#rlog-panel:not(.rlog-light) .rlog-search-input-wrap {
-    background: rgba(255, 255, 255, 0.08);
-}
-#rlog-panel:not(.rlog-light) .rlog-search-input-wrap:hover {
-    background: rgba(255, 255, 255, 0.12);
-}
-#rlog-panel:not(.rlog-light) .rlog-search-input-wrap:focus-within {
-    background: rgba(255, 255, 255, 0.12);
-}
-#rlog-panel:not(.rlog-light) .rlog-search-input {
-    background: transparent !important;
-    border: none !important;
-    color: #f4f4f5;
-    outline: none !important;
-    box-shadow: none !important;
-}
-#rlog-panel:not(.rlog-light) .rlog-search-input::placeholder {
-    color: #71717a;
-}
-
-#rlog-panel:not(.rlog-light) .rlog-search-count {
-    color: #a1a1aa;
-}
-
-#rlog-panel:not(.rlog-light) .rlog-search-prev:disabled,
-#rlog-panel:not(.rlog-light) .rlog-search-next:disabled {
-    color: #52525b;
-}
-
-#rlog-panel:not(.rlog-light) mark.rlog-search-mark {
-    background: #FFFF00;
-    color: #000000;
-}
-#rlog-panel:not(.rlog-light) mark.rlog-search-mark-current {
-    background: #FF9632;
-    color: #000000;
-}
-
-/* Màn đen kịt bọc xác plugin lúc hết hơi 💀 */
-#rlog-panel:not(.rlog-light).rlog-disabled .rlog-panel-body::after {
-    background: rgba(24, 24, 27, 0.6); /* Pha mờ mờ ảo ảo cho nó tiệp với cái nền đêm đen 🌌 */
-    color: #a1a1aa;
-}
-
-/* Thanh lăn bóng tối — Thanh cuộn cùi bắp bị thủ tiêu rồi khỏi lo style sủng gì (Thanh cuộn ma pháp overlay bản Dark Mode thì ngó xướng xíu nha 👇) */
-
-/* ============================================================
-   Bảng chưởng gọi ra để set giới hạn số log (Mặc định chơi hệ Ánh Sáng ☀️)
-   ============================================================ */
-
-/* Tấm màng bọc thép — Trùm kín mít cả trang web, đổ thêm xíu bóng mờ mờ
-   Khắc cốt ghi tâm: Tawa đã phù phép mấy cái định vị sinh tử qua inline style + !important bên trong JS rồi nha, 🚨
-   Cái CSS ở đây chỉ là lốp dự phòng thôi, tiện tay tương luôn cái !important để chặn đứng mấy trò transform mất nết của thằng cha nó phá bĩnh tọa độ! (｀・ω・´)✧ */
-.rlog-dialog-overlay {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    max-width: 100vw !important;
-    max-height: 100vh !important;
-    background: rgba(0, 0, 0, 0.45) !important;
-    z-index: 9999 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    animation: rlog-dialog-fadein 0.15s ease-out;
-}
-
-@keyframes rlog-dialog-fadein {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-/* Cốt lõi của cái bảng chưởng 🖼️ */
-.rlog-dialog {
-    background: #ffffff;
-    border: 1px solid #d1d5db;
-    border-radius: 4px;
-    width: 280px;
-    max-width: 90vw;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-    font-family: 'Segoe UI', system-ui, -apple-system, Roboto, "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
-    color: #1f2937;
-    overflow: hidden;
-}
-
-/* Cái trán của bảng chưởng */
-.rlog-dialog-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 12px;
-    background: #f3f4f6;
-    border-bottom: 1px solid #e5e7eb;
-    font-size: 14px;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    user-select: none;
-}
-
-.rlog-dialog-close {
-    background: transparent;
-    border: none;
-    border-radius: 4px;
-    color: #9ca3af;
-    font-size: 16px;
-    cursor: pointer;
-    padding: 0;
-    width: 24px;
-    height: 24px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 1;
-    transition: color 0.15s, background 0.15s;
-}
-.rlog-dialog-close:hover { color: #ef4444; background: #fee2e2; }
-
-/* Mớ ruột gan trong bảng chưởng */
-.rlog-dialog-body {
-    padding: 12px;
-}
-
-.rlog-dialog-desc {
-    margin: 0 0 10px 0;
-    font-size: 12px;
-    line-height: 1.55;
-    color: #4b5563;
-}
-
-.rlog-dialog-desc strong {
-    color: #111827;
-}
-
-/* Cái khe để gõ chữ vào */
-.rlog-dialog-input-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 10px;
-}
-
-.rlog-dialog-input {
-    flex: 1;
-    padding: 6px 10px;
-    border: 1px solid #d1d5db;
-    border-radius: 2px;
-    font-size: 13px;
-    color: #1f2937;
-    background: #ffffff;
-    outline: none;
-    transition: border-color 0.15s, box-shadow 0.15s;
-}
-.rlog-dialog-input:focus {
-    border-color: #124e78;
-    box-shadow: 0 0 0 2px rgba(18, 78, 120, 0.15);
-}
-
-/* Cái nút "Chốt Đơn" */
-.rlog-dialog-btn {
-    padding: 6px 16px;
-    border: 1px solid transparent;
-    border-radius: 2px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.15s, border-color 0.15s;
-}
-
-.rlog-dialog-btn-confirm {
-    background: #124e78;
-    color: #fff;
-    border-color: #0d3a5a;
-}
-.rlog-dialog-btn-confirm:hover {
-    background: #0f4063;
-    border-color: #0a2940;
-}
-
-/* Chữ lỏ dặn dò xíu */
-.rlog-dialog-hint {
-    margin: 0;
-    font-size: 11px;
-    color: #6b7280;
-    line-height: 1.4;
-}
-
-/* ============================================================
-   Bảng chưởng cảnh báo xài chung (Tẩy não sạch bách / Xóa lẻ tẻ 1 log)
-   ============================================================ */
-
-/* Kinh văn hiển thị giữa bảng chưởng */
-.rlog-confirm-message {
-    font-size: 13px;
-    line-height: 1.6;
-    color: #374151;
-    margin-bottom: 16px;
-    word-break: break-word;
-}
-
-.rlog-confirm-message strong {
-    color: #111827;
-    font-weight: 600;
-}
-
-/* Dãy nút bấm hầm hố */
-.rlog-confirm-actions {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 8px;
-}
-
-/* Nút "Quay Đầu Là Bờ" */
-.rlog-dialog-btn-cancel {
-    background: #f3f4f6;
-    color: #374151;
-    border-color: #d1d5db;
-}
-.rlog-dialog-btn-cancel:hover {
-    background: #e5e7eb;
-    border-color: #9ca3af;
-}
-
-/* Nút "Liều Mạng" (Bấm là bay màu/xóa sạch nha 💀) */
-.rlog-dialog-btn-danger {
-    background: #dc2626;
-    color: #ffffff;
-    border-color: #b91c1c;
-}
-.rlog-dialog-btn-danger:hover {
-    background: #b91c1c;
-    border-color: #991b1b;
-}
-
-/* Bảng chưởng cảnh báo ở cõi Âm 🌑 */
-.rlog-dialog:not(.rlog-dialog-light) .rlog-confirm-message {
-    color: #a1a1aa;
-}
-.rlog-dialog:not(.rlog-dialog-light) .rlog-confirm-message strong {
-    color: #f4f4f5;
-}
-
-.rlog-dialog:not(.rlog-dialog-light) .rlog-dialog-btn-cancel {
-    background: #3f3f46;
-    color: #e4e4e7;
-    border-color: #52525b;
-}
-.rlog-dialog:not(.rlog-dialog-light) .rlog-dialog-btn-cancel:hover {
-    background: #52525b;
-    border-color: #71717a;
-}
-
-.rlog-dialog:not(.rlog-dialog-light) .rlog-dialog-btn-danger {
-    background: #dc2626;
-    color: #ffffff;
-    border-color: #b91c1c;
-}
-.rlog-dialog:not(.rlog-dialog-light) .rlog-dialog-btn-danger:hover {
-    background: #b91c1c;
-    border-color: #991b1b;
-}
-
-/* ============================================================
-   Bảng chưởng bản Dark Mode
-   Nắm đầu nó bằng cái class rlog-dialog-light (Thằng này chơi lẻ, hông thèm đu theo theme của cái panel đâu nha 😜)
-   ============================================================ */
-
-.rlog-dialog:not(.rlog-dialog-light) {
-    background: #18181b;
-    border-color: #3f3f46;
-    color: #e4e4e7;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-}
-
-.rlog-dialog:not(.rlog-dialog-light) .rlog-dialog-header {
-    background: #27272a;
-    border-bottom-color: #3f3f46;
-    color: #f4f4f5;
-}
-
-.rlog-dialog:not(.rlog-dialog-light) .rlog-dialog-close {
-    color: #a1a1aa;
-    background: transparent;
-}
-.rlog-dialog:not(.rlog-dialog-light) .rlog-dialog-close:hover {
-    color: #f87171;
-    background: rgba(248, 113, 113, 0.15);
-}
-
-.rlog-dialog:not(.rlog-dialog-light) .rlog-dialog-desc {
-    color: #a1a1aa;
-}
-.rlog-dialog:not(.rlog-dialog-light) .rlog-dialog-desc strong {
-    color: #f4f4f5;
-}
-
-.rlog-dialog:not(.rlog-dialog-light) .rlog-dialog-input {
-    background: #27272a;
-    border-color: #52525b;
-    color: #f4f4f5;
-}
-.rlog-dialog:not(.rlog-dialog-light) .rlog-dialog-input:focus {
-    border-color: #6ba9d4;
-    box-shadow: 0 0 0 2px rgba(107, 169, 212, 0.15);
-}
-
-.rlog-dialog:not(.rlog-dialog-light) .rlog-dialog-btn-confirm {
-    background: #124e78;
-    border-color: #0d3a5a;
-}
-.rlog-dialog:not(.rlog-dialog-light) .rlog-dialog-btn-confirm:hover {
-    background: #0f4063;
-    border-color: #0a2940;
-}
-
-.rlog-dialog:not(.rlog-dialog-light) .rlog-dialog-hint {
-    color: #71717a;
-}
-
-/* ============================================================
-   Trang phục cho màn Hướng Dẫn Tân Thủ (Product Tour) 🎓
-   ============================================================ */
-
-.rlog-tour-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: transparent;
-    z-index: 99998;
-    pointer-events: auto;
-}
-
-.rlog-tour-highlight {
-    position: absolute;
-    border: 2px solid #124e78;
-    border-radius: 4px;
-    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4);
-    pointer-events: none;
-    z-index: 99999;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.rlog-tour-tooltip {
-    position: absolute;
-    width: 260px;
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
-    border-radius: 4px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-    padding: 16px;
-    z-index: 100000;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    font-family: 'Segoe UI', system-ui, -apple-system, Roboto, "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
-    font-size: 13px;
-    color: #1f2937;
-    animation: rlog-dialog-fadein 0.3s ease-out;
-}
-
-.rlog-tour-tooltip::before,
-.rlog-tour-tooltip::after {
-    content: '';
-    position: absolute;
-    bottom: auto;
-    left: var(--arrow-left, 50%);
-    transform: translateX(-50%);
-    border-style: solid;
-    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Bong bóng nằm ụ dưới đất, tam giác nhỏ xíu chọc ngược lên trời 🔼 */
-.rlog-tour-tooltip::before {
-    top: -7px;
-    border-width: 0 7px 7px 7px;
-    border-color: transparent transparent #e5e7eb transparent;
-}
-.rlog-tour-tooltip::after {
-    top: -6px;
-    border-width: 0 6px 6px 6px;
-    border-color: transparent transparent #ffffff transparent;
-}
-
-/* Bong bóng treo lơ lửng trên mây, tam giác nhỏ xíu chỉ đâm xuống đất 🔽 */
-.rlog-tour-tooltip.rlog-tour-top::before {
-    top: auto;
-    bottom: -7px;
-    border-width: 7px 7px 0 7px;
-    border-color: #e5e7eb transparent transparent transparent;
-}
-.rlog-tour-tooltip.rlog-tour-top::after {
-    top: auto;
-    bottom: -6px;
-    border-width: 6px 6px 0 6px;
-    border-color: #ffffff transparent transparent transparent;
-}
-
-.rlog-tour-close {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    background: transparent;
-    border: none;
-    color: #9ca3af;
-    font-size: 14px;
-    width: 24px;
-    height: 24px;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: background 0.2s ease, color 0.2s ease;
-}
-
-.rlog-tour-close:hover {
-    background: #f3f4f6;
-    color: #ef4444;
-}
-
-.rlog-tour-body {
-    font-size: 13px;
-    line-height: 1.5;
-    color: #4b5563;
-    margin-bottom: 16px;
-    padding-right: 20px; /* Khéo khéo né hông cho chữ đè đầu cưỡi cổ cái nút chốt hạ ở góc trên bên phải nha 🛑 */
-}
-
-.rlog-tour-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.rlog-tour-dots {
-    display: flex;
-    gap: 4px;
-}
-
-.rlog-tour-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: #d1d5db;
-    transition: background 0.2s ease, transform 0.2s ease;
-    cursor: pointer;
-}
-
-.rlog-tour-dot:hover {
-    transform: scale(1.3);
-}
-
-.rlog-tour-dot.active {
-    background: #124e78;
-}
-
-.rlog-tour-buttons {
-    display: flex;
-    gap: 8px;
-}
-
-.rlog-tour-btn {
-    background: transparent;
-    border: none;
-    font-size: 12px;
-    font-weight: 600;
-    color: #6b7280;
-    cursor: pointer;
-    padding: 4px 8px;
-    border-radius: 4px;
-    transition: all 0.2s ease;
-}
-
-.rlog-tour-btn:hover {
-    background: #f3f4f6;
-    color: #111827;
-}
-
-.rlog-tour-btn.rlog-tour-primary {
-    background: #124e78;
-    color: #ffffff;
-}
-
-.rlog-tour-btn.rlog-tour-primary:hover {
-    background: #0f4063;
-    color: #ffffff;
-}
-
-/* Hướng dẫn tân thủ ở thế giới Ngầm 🌑 */
-#rlog-panel:not(.rlog-light) .rlog-tour-overlay {
-    background: transparent;
-}
-
-#rlog-panel:not(.rlog-light) .rlog-tour-highlight {
-    border-color: #6ba9d4;
-    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6);
-}
-
-#rlog-panel:not(.rlog-light) .rlog-tour-tooltip {
-    background: #27272a;
-    border-color: #3f3f46;
-    color: #e4e4e7;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-}
-
-#rlog-panel:not(.rlog-light) .rlog-tour-tooltip::before {
-    border-color: transparent transparent #3f3f46 transparent;
-}
-#rlog-panel:not(.rlog-light) .rlog-tour-tooltip::after {
-    border-color: transparent transparent #27272a transparent;
-}
-
-#rlog-panel:not(.rlog-light) .rlog-tour-tooltip.rlog-tour-top::before {
-    border-color: #3f3f46 transparent transparent transparent;
-}
-#rlog-panel:not(.rlog-light) .rlog-tour-tooltip.rlog-tour-top::after {
-    border-color: #27272a transparent transparent transparent;
-}
-
-#rlog-panel:not(.rlog-light) .rlog-tour-close {
-    color: #71717a;
-}
-
-#rlog-panel:not(.rlog-light) .rlog-tour-close:hover {
-    background: rgba(255, 255, 255, 0.08);
-    color: #f87171;
-}
-
-#rlog-panel:not(.rlog-light) .rlog-tour-body {
-    color: #a1a1aa;
-}
-
-#rlog-panel:not(.rlog-light) .rlog-tour-dot {
-    background: #52525b;
-}
-
-#rlog-panel:not(.rlog-light) .rlog-tour-dot.active {
-    background: #6ba9d4;
-}
-
-#rlog-panel:not(.rlog-light) .rlog-tour-btn {
-    color: #a1a1aa;
-}
-
-#rlog-panel:not(.rlog-light) .rlog-tour-btn:hover {
-    background: rgba(255, 255, 255, 0.08);
-    color: #f4f4f5;
-}
-
-#rlog-panel:not(.rlog-light) .rlog-tour-btn.rlog-tour-primary {
-    background: #124e78;
-    color: #ffffff;
-}
-
-#rlog-panel:not(.rlog-light) .rlog-tour-btn.rlog-tour-primary:hover {
-    background: #0f4063;
-}
-
-
-/* ── Nắn nót cái bảng chưởng cho điện thoại xài mướt rượt 📱 ──────────────────────────────── */
-/* Thân hình cái màng bọc đã được Tawa khóa chặt bằng 100vw/100vh qua JS inline style + CSS !important rồi nha, 🔒
-   Xuống điện thoại thì cấm táy máy vụ định vị nữa. Chỉ được bóp méo cái chiều rộng của chính cái bảng chưởng với gắn cái phao cứu sinh tràn viền thôi! (๑•̀ㅂ•́)و */
-@media (max-width: 768px) {
     .rlog-dialog-overlay {
-        padding: 4vh 0;            /* Chừa tí không khí trên dưới cho nó thở miếng 💨 */
+        padding: 4vh 0;            /* Lót gạch đôi chút trên dưới cho khỏi ngột ngạt */
         box-sizing: border-box !important;
-        overflow-y: auto !important; /* Cái màng bọc lăn cuộn được nha, lỡ cái bảng chưởng dài thòng lọng thì còn biết đường vuốt xuống mà coi cái đít nó 📜 */
+        overflow-y: auto !important; /* Lưới trùm chăn cuộn được, chắn chuyện Popup chọc trời đến mức mất tiêu cái đuôi */
     }
 
     .rlog-dialog {
         width: 90vw !important;
         max-width: 400px !important;
-        max-height: 88vh !important;  /* Khóa cổ lại hông cho cái bảng chưởng cao đụng nóc 🛑 */
-        overflow-y: auto !important;  /* Lỡ ruột gan tràn họng thì cho lăn cuộn bên trong bảng chưởng luôn */
+        max-height: 88vh !important;  /* Siết xích đè chiều cao cực đại của Popup lại */
+        overflow-y: auto !important;  /* Nhét quá đà thì ruột Popup lăn lộn cuộn tới lui được */
         margin: auto !important;
     }
-}
 
 /* ============================================================
-   Thanh ma pháp cuộn Overlay (Đồ chế lại đó nha, nhìn một nẻo xài một nẻo cho nó xịn ✨)
-   Quăng cục này vô cái chuồng chứa chữ của .rmsg-content (Chỉ mấy đoạn chat dài lê thê mới thèm xài tới thôi 📜)
+   Lớp mùng chăn "Xem Toàn Văn" — Biến hình Ẻm vào Di Động
    ============================================================ */
 
-/* ── Điểm G (Hitbox): Trong suốt lơ lửng ngay trên đầu chữ, hông thèm chèn ép giành đất của ai hết nha 👻 ─────────── */
-.rlog-scroll-hitbox {
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    width: 30px;          /* [Tùy hứng chỉnh] Bề ngang của điểm G, nới to ra cho mấy ngón tay mập mạp dễ chọt trúng 👆 */
-    /* Ép nằm dưới cơ cái thanh tiêu đề tin nhắn (.rmsg-header z-index:10): Lúc lòi cái ruột của log con ra ngoài màn hình thì nội dung (có luôn thanh cuộn)
-       sẽ phải chui rúc qua háng của cái tiêu đề đang dính trần, thanh cuộn phải để cho tiêu đề chà đạp che khuất; chấm tròn phải đồng quy vu tận với thanh tiến trình, cấm có nổi lềnh bềnh một mình ăn vạ! 😤 */
-    z-index: 5;
-    cursor: pointer;
-    user-select: none;
-    -webkit-user-select: none;
-    touch-action: none;   /* Bịt miệng hông cho trình duyệt xài trò lăn/zoom mặc định ra oai 🛑 */
-}
-
-/* ── Lối ray cuộn: Đường mảnh như sợi chỉ, để lòe thiên hạ thôi nha 🕸️ ─────────────────────────── */
-.rlog-scroll-track {
-    position: absolute;
-    top: 4px;             /* [Tùy hứng chỉnh] Chừa cái khe hở từ rãnh cuộn lên đỉnh của điểm G. Nhớ móc ngoéo đồng bộ cái trackTop của clientYToDotTop trong JS nha ⚙️ */
-    right: 4.2px;           /* [Tùy hứng chỉnh] Cắt lề phải từ lối ray cuộn sang mép điểm G/contentEl. Đụng tới lõi tọa độ đó nha. Tawa lấy mắt đo bằng cơm nè: Chấm tròn béo 5px, lối ray mập 2px. Cắt lề 4.2px là số đẹp hoàn hảo, chớ dại dột xài 4.5px hay 5px là lệch pha liền! 👀✨ */
-    bottom: 4px;          /* [Tùy hứng chỉnh] Khe hở từ rãnh cuộn đâm xuống đít điểm G. Nhớ kéo theo trackBottom = hitboxH - 4 bên JS cho khớp nha ⚙️ */
-    width: 2px;           /* [Tùy hứng chỉnh] Độ béo của lối ray cuộn. Bóp eo thì nhìn bí ẩn, cho bung xõa thì chọt dễ trúng 📏 */
-    border-radius: 1px;
-    background: #e5e7eb;  /* Giao diện Cõi Sáng: Lối ray cuộn màu xám nhạt nhoà ☀️ */
-    pointer-events: none; /* Thả cửa cho sự kiện xuyên thủng lố, để đại ca Hitbox thầu trọn gói 👊 */
-    overflow: hidden;
-}
-
-/* ── Cục trượt: Cũng mảnh khảnh thôi, chiều dài sẽ do ma pháp JS tự đo tự đắp 🪄 ──────────────── */
-.rlog-scroll-thumb {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;             /* Bơm phình cho ngang bằng độ mập của lối ray (2px), ôm sát sàn sạt luôn */
-    height: 40px;         /* JS sẽ nhảy vô đá đít thay số này bằng ma pháp */
-    min-height: 20px;     /* [Tùy hứng chỉnh] Chiều cao lùn nhất của cục trượt, lùn quá chọt hông trúng đổ thừa Tawa là hông được đâu nha 😤 */
-    border-radius: 1px;
-    background: #94a3b8;  /* Giao diện Sáng: Cục trượt màu tro tàn ☀️ */
-    pointer-events: none;
-    transition: background 0.15s ease, box-shadow 0.15s ease;
-}
-
-/* ── Chấm tròn: Tawa ép tàng hình luôn, đè vô 1 cái là phụt ra, canh giữa chuẩn xác đè lên tâm lối ray cuộn 🎯 ── */
-.rlog-scroll-dot {
-    position: absolute;
-    right: 3px;
-    width: 5px;           /* [Tùy hứng chỉnh] Đường kính của bé chấm tròn, chọt tay vô sửa thì nhớ lôi cổ right với cái DOT_HALF bên JS sửa theo nha ⚙️ */
-    height: 5px;          /* [Tùy hứng chỉnh] Y chang ở trên, ép ngang bằng dọc để nặn ra hình tròn xoe hoàn hảo 🔴 */
-    border-radius: 50%;
-    background: #475569;   /* Giao diện Cõi Sáng: Chấm đen tối hù 🌑 */
-    transform: scale(0);   /* Tàng hình từ trong trứng nước (Bóp scale về 0 luôn 👻) */
-    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    pointer-events: none;
-}
-
-/* ── Lúc quậy phá: Đè hoặc lôi cổ xệch đi 👊 ───────────────────────── */
-/* Điểm G bị chọt trúng là cục trượt xám xịt bay màu, nhường sân khấu cho chấm tròn nảy lên ✨ */
-.rlog-scroll-hitbox.active .rlog-scroll-thumb {
-    opacity: 0;
-    transition: opacity 0.15s ease;
-}
-.rlog-scroll-hitbox.active .rlog-scroll-dot {
-    transform: scale(1);
-}
-
-/* Thả thính hờ điểm G (Trên PC nha, nhá hàng thị giác lúc chưa đè nút chuột 👀) */
-.rlog-scroll-hitbox:hover .rlog-scroll-thumb {
-    background: #475569;
-}
-
-/* ============================================================
-   Thanh ma pháp cuộn Overlay — Tông màu Âm Ti 🌑
-   ============================================================ */
-#rlog-panel:not(.rlog-light) .rlog-scroll-track {
-    background: #27272a;
-}
-#rlog-panel:not(.rlog-light) .rlog-scroll-thumb {
-    background: #52525b;
-}
-#rlog-panel:not(.rlog-light) .rlog-scroll-hitbox:hover .rlog-scroll-thumb {
-    background: #a1a1aa;
-}
-#rlog-panel:not(.rlog-light) .rlog-scroll-dot {
-    background: #a1a1aa;
-}
-
-/* ============================================================
-   Thanh ma pháp cuộn Overlay — Bản nặn lại cho dế yêu 📱
-   ============================================================ */
-@media (max-width: 768px) {
-    .rlog-scroll-hitbox {
-        width: 30px;       /* Xuống điện thoại vẫn lỳ lợm đu bám con số 30px bề ngang 😤 */
-    }
-}
-
-/* ============================================================
-   Màn mờ "Soi Sạch Nội Y" (Tông sáng làm chủ xị nha ☀️)
-   Úp sọt che kín nguyên cái #rlog-panel (Nuốt luôn thanh tiêu đề mẹ), đẻ ra một cái thanh tiêu đề dính dính (sticky) đứng riêng + Cái sân bãi nội dung lăn mướt rượt! ✨
-   ============================================================ */
-
-/* ── Tổ kén của màng che ─────────────────────────────── */
-.rlog-read-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 30;
-    background: #ffffff;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-}
-
-/* ── Thanh tiêu đề (Dính rịt ở trên, cấm có trôi tuột theo đống chữ 🛑) ───────────── */
-/* Thanh tiêu đề: Bóp cái padding trên dưới xuống còn 5px, nhìn lùn tịt gọn gàng hơn hẳn bà lớn tiêu đề chính 🤏 */
-.rlog-read-header {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    display: flex;
-    align-items: center;
-    justify-content: space-between; /* Tên tuổi nằm dạt trái, khu vực bấm nút rủ nhau xúm xít bên phải 👉 */
-    gap: 8px;
-    padding: 5px 12px;
-    background: #f3f4f6;
-    border-bottom: 1px solid #e5e7eb;
-    user-select: none;
-    flex-shrink: 0;
-}
-
-/* Cái chữ bị lùn đi so với bản chính (Tiêu đề mẹ 15px → Đọc Full còn 13px), còn Font chữ thì dập khuôn y xì (Kế thừa từ tổ tông panel) ✍️ */
-.rlog-read-title {
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    color: #111827;
-    line-height: 1;
-    white-space: nowrap;
-    font-family: inherit;
-}
-
-/* ── Băng đảng bấm nút bên phải: Cục gạt đổi định dạng + Copy + Đóng ngoan ngoãn xếp hàng dạt hết sang lề phải! ➡️ ── */
-.rlog-read-header-actions {
-    display: flex;
-    align-items: center;
-    gap: 4px; /* Bóp nghẹt khoảng cách giữa Copy với Đóng, cho hai đứa dính xáp vào nhau gọn gàng 👯‍♀️ */
-    flex-shrink: 0;
-}
-
-/* ── Núm gạt đổi định dạng (Đồ chơi chia nấc, ngó qua cái công tắc xem trước nội dung mà bắt chước nha 🎛️) ── */
-/* Làm bộ dạng cục trượt cho ăn dơ với cái đám nút bị ép lùn tịt (20px) kia */
-.rlog-read-format-toggle {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    background: #e5e7eb;
-    border-radius: 4px;
-    padding: 2px;
-    cursor: pointer;
-    user-select: none;
-    flex-shrink: 0;
-    height: 18px; /* Uốn mình cho chui vừa cái gầm thấp lè tè của thanh tiêu đề "Soi Sạch Nội Y" (Thanh chính nó ngạo nghễ tới 24px lận 😤) */
-    box-sizing: border-box;
-    font-size: 9px;
-    font-weight: 600;
-    white-space: nowrap; /* Khóa họng hông cho mấy chữ trong tùy chọn nhảy lầu rớt dòng */
-}
-
-/* Bổ đôi thiên hạ cho đều, chữ nào chữ nấy nằm yên chễm chệ ngay giữa địa bàn của mình; ⚖️
-   Dùng bạch cốt trảo white-space: nowrap siết chặt cổ, cấm bọn "JSON" với đồng bọn bị đè bẹp rớt dòng! 💀 */
-.rlog-read-seg-option {
-    position: relative;
-    z-index: 1;
-    flex: 1;
-    min-width: 0;
-    padding: 0 4px;       /* Ép cho thật mi nhon, để lọt thỏm vô cái thanh tiêu đề lùn xịt */
-    height: 100%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 1;
-    white-space: nowrap;
-    color: #6b7280;
-    transition: color 0.2s ease;
-}
-.rlog-read-seg-slider {
-    position: absolute;
-    top: 2px;
-    bottom: 2px;
-    left: 2px;
-    width: calc(50% - 2px);
-    background: #ffffff;
-    border-radius: 2px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-/* Lên đồ tươm tất: Kéo núm sang trái, chữ Format bật đèn pha chói lòa ✨ */
-.rlog-read-format-toggle.formatted .rlog-read-seg-formatted { color: #111827; }
-.rlog-read-format-toggle.formatted .rlog-read-seg-raw { color: #9ca3af; }
-/* Mộc mạc nguyên thủy: Hất núm sang phải, chữ Raw JSON phát quang rực rỡ 💥 */
-.rlog-read-format-toggle.raw .rlog-read-seg-raw { color: #111827; }
-.rlog-read-format-toggle.raw .rlog-read-seg-formatted { color: #9ca3af; }
-.rlog-read-format-toggle.raw .rlog-read-seg-slider {
-    transform: translateX(100%);
-}
-
-/* ── Cặp bài trùng Copy / Đóng 📋❌ ───────────────────────────
-   Nhỏ hơn hẳn cái nút của đại ca tiêu đề chính (28px): Chỉ cần 20x20 là nhét lọt khe của cái thanh "Soi Sạch Nội Y" lùn tịt rồi! 🤏 */
-.rlog-read-copy-btn,
-.rlog-read-close-btn {
-    padding: 0;
-    width: 20px;
-    height: 20px;
-    background: transparent;
-    border: none;
-    border-radius: 4px;
-    color: #6b7280;
-    font-size: 11px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 1;
-    transition: background 0.15s, color 0.15s;
-    flex-shrink: 0;
-}
-/* Do nhan sắc cục trượt với nút Copy vênh nhau (Một đứa bo góc chia nấc, đứa thì icon hình vuông chằn chặn), Tawa đành nới lỏng khoảng cách ra; Yên tâm là cái khe Copy ↔ Đóng hông sứt mẻ gì đâu! 👯‍♀️ */
-.rlog-read-copy-btn {
-    margin-left: 6px;
-}
-.rlog-read-copy-btn:hover {
-    background: rgba(0, 0, 0, 0.05);
-    color: #111827;
-}
-.rlog-read-close-btn {
-    font-size: 14px;
-}
-.rlog-read-close-btn:hover {
-    color: #ef4444;
-    background: #fee2e2;
-}
-
-/* ── Khu thả chữ (Vuốt thả ga, xài ké y xì đúc đồ nghề font chữ của .rmsg-content nha 📜) ── */
-.rlog-read-content {
-    flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding: 12px 16px;
-    font-size: 12px;
-    line-height: 1.6;
-    color: #374151;
-    white-space: pre-wrap;
-    word-break: break-word;
-    font-family: 'Segoe UI', system-ui, -apple-system, Roboto, "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-.rlog-read-content::-webkit-scrollbar {
-    display: none;
-    width: 0;
-    height: 0;
-}
-/* Bê nguyên xi phong cách ma pháp Overlay Scrollbar qua: Khu vực vuốt ve chọt ngoáy của nội dung (Chừa hẳn 30px) 👆 */
-.rlog-read-content {
-    position: relative;
-}
-
-/* ── Thanh phao cứu sinh chèn dưới đít chống đứt lìa 🛟 ──────────────────────────────
-   Chung nhịp đập với cái rốn của panel mẹ: Rảnh đâu mà kẻ vạch, hốt trọn gói cái viền chỉ mỏng manh của thằng #rlog-panel bọc ngoài là chuẩn bài! 🧶
-   Cái dải này là 6px tàng hình lót ổ (Cho xuyệt tông với cái padding-bottom: 6px của mẹ đẻ .rlog-panel-body), 👻
-   Để cứu vớt đám chữ tội nghiệp lăn xuống cùng cực hông bị cái viền chém cụt đầu rớt cổ một cách tàn nhẫn! 🔪 */
-.rlog-read-footer {
-    flex-shrink: 0;
-    height: 6px;
-    background: transparent;
-}
-
-/* ============================================================
-   Màn mờ "Soi Sạch Nội Y" — Bầu trời Âm Ti 🌑
-   ============================================================ */
-#rlog-panel:not(.rlog-light) .rlog-read-overlay {
-    background: #18181b;
-}
-#rlog-panel:not(.rlog-light) .rlog-read-header {
-    background: #27272a;
-    border-bottom-color: #3f3f46;
-}
-#rlog-panel:not(.rlog-light) .rlog-read-title {
-    color: #f4f4f5;
-}
-#rlog-panel:not(.rlog-light) .rlog-read-format-toggle {
-    background: #3f3f46;
-}
-#rlog-panel:not(.rlog-light) .rlog-read-seg-option {
-    color: #a1a1aa;
-}
-#rlog-panel:not(.rlog-light) .rlog-read-format-toggle.formatted .rlog-read-seg-formatted { color: #f4f4f5; }
-#rlog-panel:not(.rlog-light) .rlog-read-format-toggle.formatted .rlog-read-seg-raw { color: #52525b; }
-#rlog-panel:not(.rlog-light) .rlog-read-format-toggle.raw .rlog-read-seg-raw { color: #f4f4f5; }
-#rlog-panel:not(.rlog-light) .rlog-read-format-toggle.raw .rlog-read-seg-formatted { color: #52525b; }
-#rlog-panel:not(.rlog-light) .rlog-read-seg-slider {
-    background: #52525b;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-}
-#rlog-panel:not(.rlog-light) .rlog-read-copy-btn {
-    color: #a1a1aa;
-}
-#rlog-panel:not(.rlog-light) .rlog-read-copy-btn:hover {
-    background: rgba(255, 255, 255, 0.08);
-    color: #f4f4f5;
-}
-#rlog-panel:not(.rlog-light) .rlog-read-close-btn {
-    color: #a1a1aa;
-}
-#rlog-panel:not(.rlog-light) .rlog-read-close-btn:hover {
-    color: #f87171;
-    background: rgba(248, 113, 113, 0.15);
-}
-#rlog-panel:not(.rlog-light) .rlog-read-content {
-    color: #e4e4e7;
-}
-/* Thả vô bóng đêm thì cái khoảng không dưới đáy cũng bốc hơi tàng hình nốt (Hòa quyện tan chảy vô cái nền #18181b của lớp che đậy nha 👻) */
-#rlog-panel:not(.rlog-light) .rlog-read-footer {
-    background: transparent;
-}
-
-/* ============================================================
-   Màn mờ "Soi Sạch Nội Y" — Uốn lượn cho dế yêu 📱
-   ============================================================ */
-@media (max-width: 768px) {
     .rlog-read-content {
         font-size: 11px;
         padding: 10px 12px;
@@ -2384,11 +2223,11 @@ mark.rlog-search-mark-current {
         padding: 4px 10px;
         gap: 4px;
     }
-    /* Lên điện thoại thì chữ trên title lại teo thêm một nấc so với bản gốc (Title mẹ 13px → Qua Soi Sạch rớt xuống 12px) 🤏 */
+    /* Chữ Tiêu Đề bên Di động đành rụt lại dưới vế Chữ Tiêu Đề Chính (Chính 13px → Xem Toàn Văn 12px) */
     .rlog-read-title {
         font-size: 12px;
     }
-    /* Cái mâm tiêu đề trên mobile bị bào mỏng tiếp, thế là cục gạt lại chịu trận bị ép bẹp dí thêm 🍔 */
+    /* Dải Tiêu Đề Di động dẹp lại, gặm cả phần Thanh trượt thun nhỏ */
     .rlog-read-format-toggle {
         height: 16px;
         font-size: 8px;
@@ -2396,7 +2235,9 @@ mark.rlog-search-mark-current {
     .rlog-read-seg-option {
         padding: 0 3px;
     }
-    /* Đám nút trên điện thoại rủ nhau ăn kiêng lùn đi một vòng: Chỉ còn 18x18 hột tiêu 🐜 */
+    /* Nút nhúng Di động tèo lại héo hon: 18x18 */
+    .rlog-read-jump-top-btn,
+    .rlog-read-jump-bottom-btn,
     .rlog-read-copy-btn,
     .rlog-read-close-btn {
         width: 18px;
@@ -2406,11 +2247,12 @@ mark.rlog-search-mark-current {
     .rlog-read-close-btn {
         font-size: 12px;
     }
-    /* Xuống mobile thì khoảng cách cục gạt với phím Copy cũng thu hẹp nhưng vẫn thừa sức chói mắt phân biệt rõ ràng nha 👀✨ */
-    .rlog-read-copy-btn {
+    /* Thanh trượt với nhóm nút bên Di động hẹp lại đều bước mà ngó vẫn biết ai ra ai */
+    .rlog-read-jump-top-btn {
         margin-left: 5px;
     }
     .rlog-read-header-actions {
         gap: 3px;
     }
 }
+

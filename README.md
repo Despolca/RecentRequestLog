@@ -1,57 +1,57 @@
-# 📋 Nhật ký yêu cầu gần đây
+# 📋 Lịch sử Request gần đây
 
-Một plugin SillyTavern, tự động lấy toàn bộ prompt được gửi cho AI mỗi lần, tiện lợi để xem lại bất cứ lúc nào.
+Một plugin SillyTavern siêu tiện lợi, tự động bắt lấy toàn bộ prompt mỗi lần gửi cho AI, giúp Editor dễ dàng tua lại và xem bất cứ lúc nào nha (๑•̀ㅂ•́)و✧
 
 
-## ✨ Giới thiệu tính năng
+## ✨ Tính năng sơ lược
 
-- **Tự động lấy**: Không cần mở bảng điều khiển, tự động ghi lại.
-- **Nhận diện nguồn yêu cầu**: Phân biệt "Native" và "Plugin".
-- **Gộp nhóm theo vai trò**: Mỗi bản ghi được phân loại hiển thị theo `System` / `User` / `Assistant`.
-- **Sao chép bằng 1 click**: Hỗ trợ sao chép một tin nhắn hoặc toàn bộ nhóm bản ghi.
-- **Quản lý thu gọn**: Có thể nhấp để mở rộng / thu gọn riêng lẻ từng tin nhắn và toàn bộ bảng điều khiển plugin.
-- **Di chuyển + Thu phóng**: Nhấp vào khoảng trống trên thanh tiêu đề để kéo; kéo góc dưới bên phải cửa sổ để điều chỉnh kích thước.
-- **Chế độ sáng / tối**: Chuyển đổi bằng 1 click, hiệu lực vĩnh viễn.
+- **Tự động bắt**: Không cần mở bảng điều khiển, hệ thống tự động ghi lại luôn (*¯︶¯*)
+- **Nhận diện nguồn request**: Phân biệt rạch ròi giữa "Native" (Gốc) và "Plugin" nha.
+- **Nhóm theo vai trò**: Mỗi log sẽ được phân loại rõ ràng thành `System` / `User` / `Assistant` nè.
+- **Copy một chạm**: Hỗ trợ copy từng tin nhắn lẻ hoặc bê nguyên cả nhóm log luôn (≧◡≦)
+- **Quản lý thu gọn**: Tin nhắn và cả bảng điều khiển plugin đều có thể click để bung ra hoặc thu gọn lại siêu gọn gàng.
+- **Di chuyển + Zoom**: Click vào chỗ trống trên thanh tiêu đề để kéo đi; nắm góc dưới bên phải cửa sổ để điều chỉnh kích thước tùy ý.
+- **Chế độ Sáng / Tối**: Đổi màu chỉ với một click, lưu thiết lập vĩnh viễn luôn ✨
 
 
 ## 🚀 Cách sử dụng
 
 ### Cài đặt
 
-Thanh menu trên cùng `Extensions` → `Install Extension` → Sao chép và dán URL bên dưới → `Install for all` → Sau khi thành công, làm mới trang SillyTavern
+Menu trên cùng `Extensions` → `Install Extension` → Copy và dán URL bên dưới vào → `Install for all users` → Cài xong nhớ F5 làm mới trang SillyTavern nha 🌸
 
-```text
-https://github.com/Despolca/RecentRequestLog
+```
+https://github.com/akira59851/RecentRequestLog
 ```
 
 ### Lối vào bảng điều khiển
 
-Góc dưới bên trái `Extensions (Cây đũa phép)` → `[📘Nhật ký yêu cầu gần đây]`
+Góc dưới bên trái `Extensions (cây đũa phép)` → `「📘Lịch sử Request gần đây」`
 
-### Mô tả thanh tiêu đề
+### Giải thích thanh tiêu đề
 
-- **Nhật ký yêu cầu gần đây (N/10)**: Hiển thị số lượng bản ghi đã lưu hiện tại. Nhấp vào chữ có thể thu gọn / mở rộng toàn bộ bảng điều khiển.
-- **⏻**: Công tắc tổng, màu xanh lá là bật. Sau khi tắt sẽ không ghi lại bất kỳ yêu cầu mới nào.
-- **🗑**: Xóa toàn bộ bản ghi hiện tại.
-- **☀️ / 🌙**: Chuyển đổi giao diện sáng / tối.
+- **Lịch sử Request gần đây (N/10)**: Hiển thị số lượng log đang được lưu trữ. Click vào chữ để thu gọn/bung mở toàn bộ bảng điều khiển nhé.
+- **⏻**: Công tắc tổng, màu xanh lá là đang bật. Nếu tắt đi thì Tawa sẽ không lưu thêm request mới nào nữa đâu.
+- **🗑**: Xóa sạch sành sanh mọi log hiện tại.
+- **☀️ / 🌙**: Chuyển đổi qua lại giữa giao diện Sáng / Tối.
 
 
-## ⚠️ Lưu ý
+## ⚠️ Lưu ý nhỏ
 
 ### Giới hạn đã biết
-- **Số Token là ước tính thô**: Số lượng Token hiển thị trên bảng điều khiển không phải là con số chính xác mà AI dùng để tính phí thực tế, chỉ mang tính chất tham khảo chung.
-- **Lưu tối đa 10 mục**: Sau khi vượt quá giới hạn, bản ghi cũ nhất sẽ tự động bị ghi đè, bản mới nhất nằm ở trên cùng.
-- **Một vài plugin không thể ghi lại**: Có thể ghi lại yêu cầu của phần lớn plugin, nhưng không đảm bảo tất cả plugin đều có thể ghi lại được.
+- **Số Token chỉ là ước tính**: Số Token hiển thị trên bảng không phải là con số tính tiền chính xác tuyệt đối của AI đâu, chỉ để Editor tham khảo sương sương thôi nha.
+- **Lưu tối đa 10 dòng**: Vượt quá giới hạn là log cũ nhất sẽ tự động bị ghi đè, log mới nhất luôn nằm trên cùng.
+- **Vài plugin không thể lưu**: Có thể lưu request của đại đa số plugin, nhưng Tawa không dám đảm bảo 100% plugin nào cũng bắt được đâu (´・ω・`)
 
-### Mô tả hiệu suất
+### Thông số hiệu năng
 
-- Gần như không ảnh hưởng đến hiệu suất, mọi quá trình xử lý đều là các thao tác bộ nhớ thuần túy hạng nhẹ.
-- Plugin nắm bắt nội dung yêu cầu bằng cách đánh chặn các lệnh gọi `fetch` toàn cục của trình duyệt, chỉ phân tích nội dung yêu cầu liên quan đến AI, không ảnh hưởng đến phản hồi bình thường của các yêu cầu mạng khác.
+- Gần như không ăn mòn hiệu năng, mọi thao tác xử lý đều là dạng siêu nhẹ chạy thuần trên RAM.
+- Plugin sẽ chặn các cuộc gọi `fetch` toàn cục của trình duyệt để tóm gọn nội dung request, nhưng chỉ soi các dữ liệu liên quan đến AI thôi, hoàn toàn không làm ảnh hưởng đến các request mạng khác nha 🧠
 
-### Lưu ý về quyền riêng tư
+### Nhắc nhở bảo mật
 
-- Toàn bộ dữ liệu chỉ tồn tại trong không gian bộ nhớ của tab trình duyệt hiện tại, sẽ không bị tải lên, lưu trữ lâu dài hoặc gửi đến bất kỳ dịch vụ bên ngoài nào.
-- Sau khi làm mới, đóng tab hoặc khởi động lại SillyTavern, tất cả bản ghi đều sẽ bị xóa sạch.
+- Toàn bộ dữ liệu chỉ ngự trị trong không gian RAM của tab trình duyệt hiện tại, tuyệt đối không bị upload, lưu trữ vĩnh viễn hay tuồn ra cho bất kỳ dịch vụ bên ngoài nào cả 🚨
+- Chỉ cần F5, đóng tab hoặc khởi động lại SillyTavern là toàn bộ log sẽ bay màu sạch sẽ.
 
 
 ## 📅 Nhật ký cập nhật
@@ -59,7 +59,7 @@ Góc dưới bên trái `Extensions (Cây đũa phép)` → `[📘Nhật ký yê
 ### [v1.5.0] - 2026-06-10
 
 **[Mới]**
-- Thêm chức năng nhận diện nguồn yêu cầu, thêm nhãn "Native", "Plugin".
+- Thêm tính năng nhận diện nguồn gốc request, gắn thêm nhãn "Native" và "Plugin".
 
-**[Tối ưu hóa]**
-- Điều chỉnh chiều cao mặc định của bảng điều khiển.
+**[Tối ưu]**
+- Tinh chỉnh lại chiều cao mặc định của bảng điều khiển cho vừa vặn hơn (*¯︶¯*)

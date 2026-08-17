@@ -1,147 +1,189 @@
-/**
- * Nhật ký yêu cầu gần đây - Cẩm nang tân thủ (Product Tour) nè ✨
- */
+/* ============================================================
+   Lịch sử Request gần đây (Recent Request Log) — Module Hướng dẫn sử dụng (Product Tour)
+   ============================================================ */
+
+/* [Mục lục các khối] (Theo thứ tự từ trên xuống dưới trong file)
+   1. Tham số tùy chỉnh        Các hằng số cho tương tác hướng dẫn (độ trễ, lề, v.v.), chỉ cần chỉnh ở đây
+   2. Biến trạng thái          Trạng thái bộ nhớ khi hướng dẫn đang chạy (bước hiện tại, tham chiếu UI, backup log...)
+   3. Cấu hình bước hướng dẫn  Khai báo 11 bước: phần tử mục tiêu, nội dung text, tham chiếu hành động (thêm bước thì sửa ở đây)
+   4. Hàm hỗ trợ hành động     Các hành động cụ thể được gọi trong cấu hình bước (mở/đóng ngăn kéo, xem trước, tìm kiếm)
+   5. Kiểm tra phiên bản       Lấy version từ manifest, so sánh với "phiên bản đã xem" ở local để quyết định có hiện hướng dẫn không
+   6. Vòng đời hướng dẫn       Bắt đầu / Kết thúc / Chuyển bước, bao gồm việc backup và khôi phục log thật
+   7. Tạo và hiển thị UI       Tạo lớp phủ / khung highlight / bong bóng, render nội dung bong bóng và gắn sự kiện
+   8. Định vị highlight        Tính toán vị trí hình học của khung highlight và bong bóng (positionElements)
+   9. API ra bên ngoài         Lộ ra window.__RLogTour để index.js gọi
+   ============================================================ */
 
 (function () {
-    // ⚠️ Phiên bản lót đường: Chỉ móc ra xài khi vớt manifest.json thất bại thôi nha, chả liên quan gì tới version của plugin đâu! 😤
-    // Tuyệt đối hông được update cái này theo bản release của plugin! Nó là cái phao cứu sinh ghi nhớ "phiên bản hướng dẫn load thành công lần cuối": 🛑
-    // - Lỡ tay sửa thành version mới (như 1.8.0), lúc lấy manifest xịt nó sẽ ảo tưởng là "đã coi hướng dẫn mới" rồi skip luôn đó. (￢_￢;)
-    // - Cứ ôm khư khư đồ cổ (1.6.0) là để phòng hờ lúc manifest sập nguồn thì vẫn lôi hướng dẫn ra ép Editor coi, khỏi lo mù tịt tính năng mới! (๑•̀ㅂ•́)و✧
-    let currentTourVersion = '1.6.0'; // Phiên bản lót đường (Cấm update theo plugin nha, ngó lên trên mà đọc giải thích! 👆)
+    /* ── Tham số tùy chỉnh ───────────────────────────────────────────── */
+    /* Tương ứng với bảng biến CSS: Các thông số tương tác gom hết vào đây, muốn độ chế gì thì chỉ sửa khu này thôi. */
+    const START_DELAY_MS = 100;          /* Độ trễ khởi động hướng dẫn: Chờ DOM và animation ổn định rồi mới hiện bước 1 */
+    const TARGET_RETRY_DELAY_MS = 100;   /* Độ trễ thử lại tìm mục tiêu: Khoảng thời gian chờ nếu không tìm thấy phần tử (như ô tìm kiếm tạo động) */
+    const TARGET_RETRY_MAX = 3;          /* Số lần thử lại tối đa: Quá số này thì skip luôn bước đó, tránh bị kẹt nếu DOM chưa sẵn sàng */
+    const HIGHLIGHT_PADDING_DEFAULT = 4; /* Padding mặc định của khung highlight: Khung bự hơn phần tử mục tiêu bao nhiêu pixel (có thể ghi đè riêng từng bước) */
+    const TOOLTIP_ARROW_GAP = 8;         /* Khoảng cách từ bong bóng đến mục tiêu: Từ mũi tên nhỏ đến mép phần tử (px) */
+    const TOOLTIP_EDGE_MARGIN = 10;      /* Khoảng lề chống tràn của bong bóng: Lề tối thiểu khi bong bóng sát mép trái/phải bảng điều khiển (px) */
+    const ARROW_EDGE_LIMIT = 24;         /* Giới hạn mũi tên sát mép bong bóng: Tránh mũi tên mọc chệch ra ngoài bo góc hoặc bay lơ lửng (px) */
+
+    /* ⚠️ Phiên bản dự phòng (đáy): Chỉ dùng khi get manifest.json thất bại, ý nghĩa không dính dáng tới phiên bản plugin.
+       Đừng có update số này theo phiên bản plugin nha! Nó là mốc "phiên bản hướng dẫn load thành công lần cuối":
+       - Nếu lỡ tay sửa thành version mới (vd 1.8.0), lúc get manifest tịt ngòi nó sẽ tưởng "đã xem hướng dẫn mới" rồi skip luôn.
+       - Giữ nguyên số cũ (1.6.0) là để phòng hờ get manifest xịt thì nó vẫn kích hoạt hướng dẫn, tránh việc user mù tịt tính năng mới. */
+    let currentTourVersion = '1.6.0'; /* Phiên bản dự phòng (Đừng đổi theo version plugin, xem ghi chú ở trên) */
     const STORAGE_KEY = 'RecentRequestLog_tour_version';
 
-    const steps = [
-        {
-            targetSelector: '.rlog-title-text',
-            desc: 'Click nhẹ vào đây để <strong>thu gọn/bung lụa</strong> nè (´• ω •)'
-        },
-        {
-            targetSelector: '.rlog-title-count',
-            desc: '<strong>Double click</strong> vô con số để set giới hạn dung lượng log nha 🔢',
-            padding: 0
-        },
-        {
-            targetSelector: '.rlog-header-drag-space',
-            desc: 'Đè chặt chỗ trống rồi <strong>kéo lê cửa sổ</strong> đi dạo 🐾'
-        },
-        {
-            targetSelector: '.rlog-resize-grip',
-            desc: 'Nắm đầu cái&nbsp;<i class="fa-solid fa-caret-down" style="transform: rotate(-45deg);"></i>&nbsp;rồi kéo để <strong>bóp/kéo giãn cửa sổ</strong> nha 📐',
-            placement: 'top',
-            padding: 0
-        },
-        {
-            targetSelector: '.rlog-header-actions',
-            desc: '• 1001 tùy chọn khác<br>• Gập gọn hết đám log lại<br>• Đóng cửa nghỉ khỏe 🚪'
-        },
-        {
-            targetSelector: '#rlog-more-drawer',
-            desc: 'Chọt vô <strong>Tùy chọn khác</strong> để khui ra:<br>• Công tắc soi trước nội dung 👀<br>• Cầu dao tổng của plugin 🔌<br>• Gọi hồn cẩm nang tân thủ 📖<br>• Nút test dạo (Mốt Tawa đá đi sau)<br>• Tẩy não toàn bộ log 🗑️<br>• Đổi tông Sáng/Tối ☀️🌙',
-            onEnter: () => {
-                const drawer = document.getElementById('rlog-more-drawer');
-                if (drawer) drawer.style.transition = 'none';
-                if (window.__RLogApi && window.__RLogApi.openDrawer) {
-                    window.__RLogApi.openDrawer();
-                }
-                if (drawer) {
-                    void drawer.offsetWidth;
-                    drawer.style.transition = '';
-                }
-            },
-            onLeave: () => {
-                const drawer = document.getElementById('rlog-more-drawer');
-                if (drawer) drawer.style.transition = 'none';
-                if (window.__RLogApi && window.__RLogApi.closeDrawer) {
-                    window.__RLogApi.closeDrawer();
-                }
-                if (drawer) {
-                    void drawer.offsetWidth;
-                    drawer.style.transition = '';
-                }
-            }
-        },
-        {
-            targetSelector: '.rlog-record[data-record-index="0"] .rmsg-item .rmsg-preview-text',
-            desc: 'Bật <strong>Xem trước nội dung</strong> lên là sẽ soi được một khúc đầu của tin nhắn đó nha 🔍',
-            onEnter: () => {
-                if (window.__RLogApi && window.__RLogApi.expandDemo) {
-                    window.__RLogApi.expandDemo(); // Ép uổng bắt log với tin nhắn phải phơi bày ra hết 😤
-                }
-                if (window.__RLogApi && window.__RLogApi.forcePreview) {
-                    window.__RLogApi.forcePreview(true);
-                }
-            },
-            onLeave: () => {
-                if (window.__RLogApi && window.__RLogApi.forcePreview) {
-                    window.__RLogApi.forcePreview(false);
-                }
-            }
-        },
-        {
-            targetSelector: '.rlog-record[data-record-index="0"] .rlog-record-info',
-            desc: '• Tên diễn viên<br>• Nguồn gọi hồn<br>• Dấu ấn thời gian ⏱️<br>• Tên model<br>• Lượng token/số lượng tin nhắn (Thấy có dấu "~" trước token là Tawa chỉ phỏng đoán thôi đó nha 🤷‍♀️)'
-        },
-        {
-            targetSelector: '.rlog-record[data-record-index="0"] .rlog-record-actions-inner',
-            desc: '<strong>Lúc bung lụa sẽ lòi ra:</strong><br>• Kính lúp tìm kiếm 🔍<br>• Bung/Gập hết tin nhắn trong ruột<br>• <strong>[MỚI] Soi Sạch Nội Y (Xem toàn văn)</strong> (Cái <strong>Copy nguyên cục</strong> bị nhét vô trong rồi nha)<br>• Trảm luôn bản ghi này 🔪'
-        },
-        {
-            targetSelector: '.rlog-search-box',
-            desc: '• Chọt nhẹ 🔍︎, gõ từ khóa vô rồi quẩy thôi<br>• Lấy mũi tên hoặc đập Enter/Shift+Enter để nhảy cóc giữa các mục 🎯<br>• Chọt 🔍︎ cái nữa để dẹp trò tìm kiếm 🛑',
-            // Khung highlight tự chế nè: Ép mép trái dính sát mép trái của kính lúp (Tự uốn éo theo 24px PC / 20px mobile nha), 📏
-            // Xén bớt 8px trên dưới làm lá chắn bảo vệ chống chọt nhầm 🛡️
-            highlightAdjust: {
-                leftAlignTo: '.rlog-search-btn',
-                topExtra: 8,
-                bottomExtra: 8
-            },
-            onEnter: () => {
-                // Demo đã được Tawa chích vô từ lúc startTour rồi (Lúc nào cũng tiêm), khỏi mất công check list rỗng hay hông. 💉
-                // Khui ô tìm kiếm rồi tra chữ "Ví dụ" (Demo có giấu chữ này, bao đảm bới ra kết quả) 🕵️‍♀️
-                // Nhớ kỹ: Cấm tuyệt đối xài trò expandDemo/injectDemo trước hay sau khi gọi openSearchForRecord, 🛑
-                // Tụi nó sẽ kích hoạt renderPanelContent() → resetSearchIfActive() làm bốc hơi cái ô tìm kiếm vừa nặn ra đó! 💨
-                // Đám openSearchForRecord/performSearch/closeSearch giấu mặt trong index.js chứ hông lòi ra global đâu, 👻
-                // Phải đi cửa sau qua __RLogApi mới mò ra được. 🚪
-                if (window.__RLogApi && typeof window.__RLogApi.openSearchForRecord === 'function') {
-                    window.__RLogApi.openSearchForRecord(0);
-                }
-                // Bơm chữ vô ô text (performSearch chỉ update searchState thôi, hông chịu tự điền vô input.value đâu) ⌨️
-                const searchBox = document.querySelector('#rlog-panel .rlog-search-box');
-                const inputEl = searchBox ? searchBox.querySelector('.rlog-search-input') : null;
-                if (inputEl) {
-                    inputEl.value = 'Ví dụ';
-                }
-                if (window.__RLogApi && typeof window.__RLogApi.performSearch === 'function') {
-                    window.__RLogApi.performSearch(0, 'Ví dụ');
-                }
-            },
-            onLeave: () => {
-                if (window.__RLogApi && typeof window.__RLogApi.closeSearch === 'function') {
-                    window.__RLogApi.closeSearch();
-                }
-            }
-        },
-        {
-            targetSelector: '.rlog-record[data-record-index="0"] .rmsg-item .rmsg-copy-btn',
-            desc: '<strong>Lúc bung lụa sẽ lòi ra:</strong><br>• Móc túi (Copy) lẻ tẻ từng tin nhắn ✂️<br><br>【Chương trình lùa gà tân thủ tới đây là hết, chọt vô cục ❔ để ôn lại bài nha】'
-        }
-    ];
-
+    /* ── Biến trạng thái ───────────────────────────────────────────── */
     let currentStep = 0;
     let overlay = null;
     let tooltip = null;
     let highlightBox = null;
     let isActive = false;
-    let isDemoInjected = false;
-    /** Túi xách chứa hàng real trước khi lùa gà (Lúc diễn tour thì dọn sạch, diễn xong trả lại chỗ cũ) 👜 */
+    /* Danh sách log thật được backup trước khi chạy hướng dẫn (Dọn dẹp danh sách trong lúc hướng dẫn, xong thì hồi phục lại) */
     let savedRecords = null;
-    let stepTimer = null;
-    /** Số mạng dự phòng khi kiếm hông ra mục tiêu (Để khỏi bị skip khi DOM còn đang ngái ngủ) 🎮 */
+    /* Bộ đếm số lần tìm kiếm mục tiêu xịt (Để không bị skip vội nếu DOM chưa load xong) */
     let findTargetRetryCount = 0;
 
-    async function checkAndStartTour(force = false) {
+    /* ── Cấu hình bước hướng dẫn ───────────────────────────────────────── */
+    /* Mỗi bước = Phần tử mục tiêu + Text hiển thị + Tùy chọn; Các bước cần làm trò (mở hộc/xem trước/tìm kiếm...)
+       thì móc với mấy hàm ở khu "Hàm hỗ trợ hành động" bên dưới, muốn đẻ thêm bước thì copy một object là xong. */
+    const steps = [
+        {
+            targetSelector: '.rlog-title-text',
+            desc: 'Click vào đây để <strong>thu gọn/mở rộng</strong>'
+        },
+        {
+            targetSelector: '.rlog-title-count',
+            desc: '<strong>Nháy đúp</strong> vào số để cài đặt giới hạn log',
+            padding: 0
+        },
+        {
+            targetSelector: '.rlog-header-drag-space',
+            desc: 'Nhấn giữ vùng trống để <strong>kéo cửa sổ</strong>'
+        },
+        {
+            targetSelector: '.rlog-resize-grip',
+            desc: 'Nhấn giữ&nbsp;<i class="fa-solid fa-caret-down" style="transform: rotate(-45deg);"></i>&nbsp;rồi kéo để <strong>điều chỉnh kích thước cửa sổ</strong>',
+            placement: 'top',
+            padding: 0
+        },
+        {
+            targetSelector: '.rlog-header-actions',
+            desc: '• Thêm tùy chọn<br>• Thu gọn tất cả<br>• Đóng bảng điều khiển'
+        },
+        {
+            targetSelector: '#rlog-more-drawer',
+            desc: 'Click vào <strong>Thêm tùy chọn</strong> để hiện:<br>• Công tắc xem trước nội dung<br>• Công tắc tổng plugin<br>• Hướng dẫn sử dụng<br>• Nút test tạm thời (sẽ xóa sau)<br>• Xóa sạch mọi log<br>• Đổi chế độ Sáng/Tối',
+            onEnter: enterDrawerStep,
+            onLeave: leaveDrawerStep
+        },
+        {
+            targetSelector: '.rlog-record[data-record-index="0"] .rmsg-item .rmsg-preview-text',
+            desc: 'Bật <strong>Xem trước nội dung</strong> để hiện một phần chữ đầu tin nhắn nha',
+            onEnter: enterPreviewStep,
+            onLeave: leavePreviewStep
+        },
+        {
+            targetSelector: '.rlog-record[data-record-index="0"] .rlog-record-info',
+            desc: '• Tên nhân vật<br>• Nguồn request<br>• Thời gian<br>• Tên model<br>• Số token [Số lượng tin nhắn] (Có dấu "~" phía trước là số ước tính nha)'
+        },
+        {
+            targetSelector: '.rlog-record[data-record-index="0"] .rlog-record-actions-inner',
+            desc: '<strong>Khi mở rộng sẽ hiện:</strong><br>• Tìm kiếm<br>• Mở/Thu gọn tất cả tin nhắn con<br>• <strong>New Bay nhanh xuống đáy</strong><br>• <strong>New Xem toàn văn</strong> (Nút <strong>Copy toàn bộ request</strong> cũ được dời vào trong này nè)<br>• Xóa log này'
+        },
+        {
+            targetSelector: '.rlog-search-box',
+            desc: '• Click 🔍︎ , nhập từ khóa để tìm kiếm<br>• Nhấn mũi tên hoặc Enter/Shift+Enter để nhảy giữa các kết quả<br>• Click 🔍︎ lần nữa để tắt tìm kiếm',
+            /* Căn chỉnh khung highlight tự tạo: Mép trái dính sát mép trái nút kính lúp (Tự thích nghi nút 24px trên Desktop / 20px trên mobile),
+               Xén bớt 8px trên dưới để chừa vùng bảo vệ chống click nhầm */
+            highlightAdjust: {
+                leftAlignTo: '.rlog-search-btn',
+                topExtra: 8,
+                bottomExtra: 8
+            },
+            onEnter: enterSearchStep,
+            onLeave: leaveSearchStep
+        },
+        {
+            targetSelector: '.rlog-record[data-record-index="0"] .rmsg-item .rmsg-copy-btn',
+            desc: '<strong>Khi mở rộng sẽ hiện:</strong><br>• Copy tin nhắn lẻ<br><br>[Hướng dẫn xong rồi nè, click icon ❔ để xem lại nha]'
+        }
+    ];
+
+    /* ── Hàm hỗ trợ hành động ───────────────────────────────────── */
+    /* Bước hộc kéo: Bước vào thì mở hộc "Thêm tùy chọn", bước ra thì đóng lại.
+       Xài chiêu cấm transition tạm thời + ép reflow để cái hộc chui tọt ra tức thì, khung highlight khỏi bị giật nhấp nhô. */
+    function setDrawerState(open) {
+        const drawer = document.getElementById('rlog-more-drawer');
+        if (drawer) drawer.style.transition = 'none';
+        const api = window.__RLogApi;
+        const action = api && (open ? api.openDrawer : api.closeDrawer);
+        if (action) {
+            action.call(api);
+        }
+        if (drawer) {
+            void drawer.offsetWidth;
+            drawer.style.transition = '';
+        }
+    }
+
+    function enterDrawerStep() {
+        setDrawerState(true);
+    }
+
+    function leaveDrawerStep() {
+        setDrawerState(false);
+    }
+
+    /* Bước xem trước: Bước vào thì mở banh chành log/tin nhắn demo ra và bật xem trước, bước ra thì tắt xem trước đi */
+    function enterPreviewStep() {
+        if (window.__RLogApi && window.__RLogApi.expandDemo) {
+            window.__RLogApi.expandDemo(); /* Chắc chắn là log với tin nhắn đang há to */
+        }
+        if (window.__RLogApi && window.__RLogApi.forcePreview) {
+            window.__RLogApi.forcePreview(true);
+        }
+    }
+
+    function leavePreviewStep() {
+        if (window.__RLogApi && window.__RLogApi.forcePreview) {
+            window.__RLogApi.forcePreview(false);
+        }
+    }
+
+    /* Bước tìm kiếm: Bước vào thì lôi ô tìm kiếm ra search chữ "示例" (demo), bước ra thì dẹp ô tìm kiếm */
+    function enterSearchStep() {
+        /* Đống demo đã được bơm vào từ startTour (Lúc nào cũng bơm), khỏi cần check danh sách trống hay không.
+           Lôi ô tìm kiếm ra gõ "示例" (Bảo đảm có kết quả vì data demo có chữ này)
+           Lưu ý: Đừng có gọi expandDemo/injectDemo trước hay sau openSearchForRecord,
+           mấy cái đó sẽ gọi renderPanelContent() → resetSearchIfActive() quét sạch cái ô tìm kiếm vừa đẻ ra đó.
+           Mấy hàm openSearchForRecord/performSearch/closeSearch nằm vất vưởng trong index.js không xài global được,
+           phải móc qua __RLogApi. */
+        if (window.__RLogApi && typeof window.__RLogApi.openSearchForRecord === 'function') {
+            window.__RLogApi.openSearchForRecord(0);
+        }
+        /* Nhét chữ vào ô (performSearch chỉ cập nhật searchState chứ không dán vào input.value) */
+        const searchBox = document.querySelector('#rlog-panel .rlog-search-box');
+        const inputEl = searchBox ? searchBox.querySelector('.rlog-search-input') : null;
+        if (inputEl) {
+            inputEl.value = '示例';
+        }
+        if (window.__RLogApi && typeof window.__RLogApi.performSearch === 'function') {
+            window.__RLogApi.performSearch(0, '示例');
+        }
+    }
+
+    function leaveSearchStep() {
+        if (window.__RLogApi && typeof window.__RLogApi.closeSearch === 'function') {
+            window.__RLogApi.closeSearch();
+        }
+    }
+
+    /* ── Kiểm tra phiên bản & Khởi động ─────────────────────────────────────── */
+    /* Thó lén version của manifest.json, chép vào currentTourVersion.
+       Thó xịt thì xài bản dự phòng (Đọc kỹ note "Phiên bản dự phòng" ở trên), cục gọi hàm sẽ tự quyết định có bung hướng dẫn ra không. */
+    async function loadManifestVersion() {
         try {
-            // Moi đường link manifest.json bằng ma pháp động 🪄
+            /* Lùng sục đường dẫn của manifest.json */
             let manifestUrl = '/scripts/extensions/third-party/RecentRequestLog/manifest.json';
             const scripts = document.getElementsByTagName('script');
             for (let i = 0; i < scripts.length; i++) {
@@ -151,7 +193,7 @@
                 }
             }
 
-            // Đắp thêm bùa thời gian chống cache cùi bắp ⏰
+            /* Nhét thêm timestamp để lừa cache */
             const response = await fetch(`${manifestUrl}?t=${Date.now()}`, { cache: 'no-cache' });
             if (response.ok) {
                 const manifest = await response.json();
@@ -160,23 +202,28 @@
                 }
             }
         } catch (e) {
-            console.warn('[RecentRequestLog] Moi số version từ manifest.json xịt ngòi rồi, lôi hàng lót đường ra xài tạm', e);
+            console.warn('[RecentRequestLog] Lấy version manifest.json tạch rồi, xài bản dự phòng vậy', e);
         }
+    }
 
+    /* Đọ "Version đã xem ở local" với "Version manifest hiện tại": Lệch pha (hoặc ép force) thì vác hướng dẫn ra. */
+    async function checkAndStartTour(force = false) {
+        await loadManifestVersion();
         const savedVersion = localStorage.getItem(STORAGE_KEY);
         if (force || savedVersion !== currentTourVersion) {
             startTour();
         }
     }
 
+    /* ── Vòng đời hướng dẫn ───────────────────────────────────────── */
     function startTour() {
         if (isActive) return;
-        
-        // Cái bảng điều khiển phải hiện hồn ra mới dắt đi tour được chứ! 👻
+
+        /* Phải ngó thấy cái bảng điều khiển thì mới diễn hướng dẫn được */
         const panel = document.getElementById('rlog-panel');
         if (!panel || panel.style.display === 'none') return;
 
-        // Đang bị cuộn tròn thì banh cái panel ra trước đã 🧻
+        /* Nếu đang cụp lại thì banh nó ra trước */
         if (panel.classList.contains('rlog-window-collapsed')) {
             const titleText = panel.querySelector('.rlog-title-text');
             if (titleText) titleText.click();
@@ -184,16 +231,15 @@
 
         isActive = true;
         currentStep = 0;
-        isDemoInjected = false;
 
-        // Trong lúc đi tour chỉ khoe hàng demo thôi, giấu nhẹm hàng real đi nha: 🙈
-        // 1. Chép đống log real hiện tại cất vô savedRecords 🗄️
-        // 2. Cắm cờ đang dẫn tour (Từ khúc này log mới tới thì quăng vô kho tạm, miễn hiện ra, để index.js lo) 🚩
-        // 3. Dọn sạch bách cái list (setRecords([])) 🧹
-        // 4. Tiêm demo vô (Nhét lên đỉnh đầu, mọi bước có data-record-index="0" đều trút lên đầu thằng demo này) 💉
-        // Chơi chiêu này để thao túng hoàn toàn DOM lúc dẫn tour, đề phòng trong list có hàng real... 🎮
-        // Xong rồi khúc cuối "Copy lẻ tẻ" nó chỉ điểm nhầm vô hàng real hông kiểm soát được làm lệch khung! (￢_￢;)
-        // Vô endTour là Tawa sẽ sút bay demo rồi móc savedRecords ra lại. 🔄
+        /* Lúc hướng dẫn chỉ mang hàng demo ra khoe, cất hàng real đi nha:
+           1. Chép danh sách log thật hiện tại vào savedRecords để backup
+           2. Cắm cờ báo đang hướng dẫn (Mấy log mới bay tới lúc này chỉ đưa vào tạm giam, không được ló mặt ra, index.js lo vụ này)
+           3. Dọn sạch bách danh sách (setRecords([]))
+           4. Bơm hàng demo vào (Nhét lên top, đám data-record-index="0" đều đánh thẳng vào con demo này)
+           Làm thế này thì nguyên cái DOM nằm gọn trong lòng bàn tay, không sợ danh sách thật dài quá
+           làm bước cuối "Copy tin nhắn lẻ" đè lộn chỗ do log thật không kiểm soát được.
+           Lúc endTour sẽ quét sạch demo rồi bưng savedRecords trả về chỗ cũ. */
         if (window.__RLogApi) {
             const api = window.__RLogApi;
             if (typeof api.records === 'function') {
@@ -209,68 +255,67 @@
             }
             if (typeof api.injectDemo === 'function') {
                 api.injectDemo();
-                isDemoInjected = true;
             }
         }
 
         createUI();
-        
-        // Gồng thêm xíu chờ thằng DOM với animation lề mề múa xong ⏳
+
+        /* Đợi một tẹo cho DOM với animation an tọa rồi mới quẩy */
         setTimeout(() => {
             executeStep(currentStep);
-        }, 100);
+        }, START_DELAY_MS);
     }
 
     function endTour() {
         if (!isActive) return;
 
-        // Dứt điểm đòn onLeave của bước cuối ⚔️
+        /* Kích hoạt onLeave của bước cuối cùng */
         if (steps[currentStep] && typeof steps[currentStep].onLeave === 'function') {
             steps[currentStep].onLeave();
         }
 
         isActive = false;
 
-        // Khắc cốt ghi tâm cái version 🖋️
+        /* Lưu sổ version */
         localStorage.setItem(STORAGE_KEY, currentTourVersion);
 
-        // Phá dỡ UI 💥
+        /* Tháo dỡ UI */
         if (overlay) overlay.remove();
         if (tooltip) tooltip.remove();
         if (highlightBox) highlightBox.remove();
-        
+
         overlay = null;
         tooltip = null;
         highlightBox = null;
 
-        // Phục hồi nhân phẩm cho đống log cũ + nhét thêm mớ log mới lụm lúc đi tour: 🧟‍♀️
-        // - Hàng mới rớt xuống lúc đi tour bị index.js nhốt lại (hông cho lên sóng), giờ khui ra trước, 📦
-        //   Rồi trộn chung với đống backup lúc nãy (Mới nằm trên, cũ đè dưới, chuẩn trend "Đồ mới nhất đội lên đầu") 👑
-        // - Nếu trước đó nghèo rớt mồng tơi (savedRecords rỗng tuếch) → Thì xài đỡ mớ log mới nhặt được thôi 🤷‍♀️
-        // Quăng requestAnimationFrame để câu giờ qua frame sau mới hồi phục: Cho cái giao diện tour nó bốc hơi trước đã (Tạo cảm giác mượt mà), 💨
-        // Rồi mới lôi cái cục nợ render list ra xử (Cái thứ mà 100 log × 100+ tin nhắn có khi ngốn cả đống ms). 🐢
-        // Làm trò này để lúc Editor chọt "Hoàn thành" là cái bong bóng nó lặn mất tăm liền, list hồi sinh ở nhịp sau, khỏi lo UI đứng hình chết lâm sàng! (๑•̀ㅂ•́)و✧
+        /* Dọn đồ: Đem danh sách log thật lúc nãy + đám log mới ấp trong lúc hướng dẫn trả về:
+           - Log mới tạt ngang trong lúc hướng dẫn bị index.js nhốt tạm (không cho hiện), giờ lôi ra,
+             nhập chung với đống log backup (Mới đứng trước, cũ đứng sau, đúng chuẩn "Mới nhất trên top")
+           - Nếu trước đó chả có log nào (savedRecords trống lốc) → Chỉ vác đám log mới ra thôi
+           Mượn requestAnimationFrame hoãn binh tới frame sau mới phục hồi: Để mấy cái UI hướng dẫn bốc hơi ngay tắp lự (Phản hồi tức thì),
+           rồi mới gánh cục tạ render lại danh sách (Chục log x Trăm tin nhắn thì gánh render lòi trĩ cả mấy trăm ms).
+           Cứ bấm "Hoàn thành" là bóng dáng hướng dẫn bay lẹ, danh sách phọt ra ở frame sau, UI khỏi lo chết cứng. */
         if (savedRecords !== null && window.__RLogApi && typeof window.__RLogApi.setRecords === 'function') {
             const recordsBeforeTour = savedRecords;
             savedRecords = null;
             requestAnimationFrame(() => {
                 const api = window.__RLogApi;
                 if (api && typeof api.setRecords === 'function') {
-                    // Móc đống log tạm giam lúc đi tour ra trước (Ngâm tới phút chót mới móc, 🎣
-                    // Chứ hông mấy cái rAF nó lọt sổ log mới vô list cũ rồi bay màu luôn đó) 👻
+                    /* Khui đám log tạm giam ra trước (Hoãn tới giây chót mới khui,
+                       Kẻo lúc rAF kẽ hở có log mới bay vào lọt sổ không bị đè mất) */
                     let pendingRecords = [];
                     if (typeof api.drainTourPendingRecords === 'function') {
                         pendingRecords = api.drainTourPendingRecords();
                     }
-                    // Lúc đi tour mà có lộc rớt xuống, thì cứ diễn y xì addRecord bình thường: 🎭
-                    // Hàng mới tới là gập cổ hết đám cũ lại (Chỉ gập cái vỏ thôi, ruột gan tin nhắn vẫn giữ y nguyên). 📦
-                    // Ế độ hông có log mới thì cứ trả về y boong lúc chưa đi tour, hông thèm đụng chạm tới trạng thái bung lụa của Editor. ✨
+                    /* Có log mới đến lúc đang hướng dẫn thì hành xử y như addRecord bình thường:
+                       Log mới tới thì mấy log cũ tự động cụp đuôi lại (Chỉ gập log lại thôi, tin nhắn con kệ nó).
+                       Không có log mới thì trả y nguyên trạng thái cũ, khỏi chọc ngoáy làm user bực mình. */
                     if (pendingRecords.length > 0) {
                         recordsBeforeTour.forEach(r => { r.collapsed = true; });
                     }
                     api.setRecords(pendingRecords.concat(recordsBeforeTour));
                 }
-                // Hồi sinh xong xuôi rồi mới lột mác đi tour, từ đó log mới tới cứ ném vô list như cơm bữa 🍚
+                /* Hoàn hồn xong thì tắt cờ hướng dẫn, log mới bay tới cứ hiên ngang nhảy vào danh sách như thường */
                 if (api && typeof api.setTourActive === 'function') {
                     api.setTourActive(false);
                 }
@@ -281,7 +326,6 @@
                 window.__RLogApi.setTourActive(false);
             }
         }
-        isDemoInjected = false;
     }
 
     function executeStep(nextIndex) {
@@ -290,51 +334,47 @@
             return;
         }
 
-        if (stepTimer) {
-            clearTimeout(stepTimer);
-            stepTimer = null;
-        }
-
-        // Xuất chiêu onLeave của bước trước 🥋
+        /* Chạy onLeave của bước vừa xong */
         if (steps[currentStep] && currentStep !== nextIndex && typeof steps[currentStep].onLeave === 'function') {
             steps[currentStep].onLeave();
         }
 
         currentStep = nextIndex;
 
-        // Bơm onEnter của bước hiện tại 💉
+        /* Chạy onEnter của bước hiện tại */
         if (steps[currentStep] && typeof steps[currentStep].onEnter === 'function') {
             steps[currentStep].onEnter();
         }
 
-        // Đập luôn cái chữ bong bóng ra mặt liền, cho Editor khỏi chê lag! 🎈
+        /* Hiện nguyên hình text của bong bóng cái rụp, khỏi làm user thấy bị "khựng" lúc click */
         showStep(currentStep);
     }
 
+    /* ── Tạo và hiển thị UI ──────────────────────────────────────── */
     function createUI() {
-        // Tấm màng bọc 🛡️
+        /* Lớp phủ tàng hình */
         overlay = document.createElement('div');
         overlay.className = 'rlog-tour-overlay';
-        
-        // Vòng hào quang 🌟
+
+        /* Khung sáng */
         highlightBox = document.createElement('div');
         highlightBox.className = 'rlog-tour-highlight';
 
-        // Bong bóng bà tám 💬
+        /* Bong bóng chat */
         tooltip = document.createElement('div');
         tooltip.className = 'rlog-tour-tooltip';
-        
-        // Nhét vô ruột panel, bắt nó lẽo đẽo đi theo panel 🐾
+
+        /* Nhét vào bụng bảng điều khiển, đi đâu nó cũng bám theo */
         const panel = document.getElementById('rlog-panel');
         if (panel) {
             panel.appendChild(overlay);
             panel.appendChild(highlightBox);
             panel.appendChild(tooltip);
 
-            // Chọt trúng màng bọc: Lệch khỏi bong bóng → Nhảy bước tiếp (Tới đáy thì nghỉ khỏe) ⏭️
+            /* Chọt vào lớp phủ: Không trúng popup → Qua bước mới (Tới bến rồi thì dẹp) */
             overlay.addEventListener('click', (e) => {
                 e.stopPropagation();
-                // Chọt trúng bong bóng thì bơ đi (Nó có nút bấm của riêng nó rồi) 💅
+                /* Chọt vô bong bóng thì mặc xác (Nó tự có nút của nó rồi) */
                 if (tooltip && tooltip.contains(e.target)) return;
                 if (currentStep >= steps.length - 1) {
                     endTour();
@@ -346,48 +386,28 @@
         }
     }
 
-    function showStep(index) {
+    /* Đúc nội dung bong bóng: Nút X + Mô tả + Dàn chấm tròn + Nút Lui/Bỏ qua/Tới */
+    function buildTooltipHtml(index) {
         const step = steps[index];
-        const panel = document.getElementById('rlog-panel');
-        const targetEl = panel ? panel.querySelector(step.targetSelector) : null;
-
-        if (!targetEl) {
-            // Mò hông ra mục tiêu thì câu giờ thử lại (Đợi thằng DOM tỉnh ngủ, ví dụ như cái ô tìm kiếm tự đẻ ra chẳng hạn) 🐢
-            if (findTargetRetryCount < 3) {
-                findTargetRetryCount++;
-                setTimeout(() => {
-                    if (isActive && currentStep === index) {
-                        showStep(index);
-                    }
-                }, 100);
-            } else {
-                findTargetRetryCount = 0;
-                console.warn(`[Tour] Mù đường hông thấy mục tiêu: ${step.targetSelector}`);
-                executeStep(index + 1);
-            }
-            return;
-        }
-        findTargetRetryCount = 0;
-
-        // Bơm chữ vô bong bóng 🎈
         const isLast = index === steps.length - 1;
         const isFirst = index === 0;
-
-        tooltip.innerHTML = `
-            <button class="rlog-tour-close" title="Dẹp luôn cái tour này"><i class="fa-solid fa-xmark"></i></button>
+        return `
+            <button class="rlog-tour-close" title="Thoát hướng dẫn"><i class="fa-solid fa-xmark"></i></button>
             <div class="rlog-tour-body">${step.desc}</div>
             <div class="rlog-tour-footer">
                 <div class="rlog-tour-dots">
                     ${steps.map((_, i) => `<span class="rlog-tour-dot ${i === index ? 'active' : ''}" data-index="${i}"></span>`).join('')}
                 </div>
                 <div class="rlog-tour-buttons">
-                    ${!isFirst ? `<button class="rlog-tour-btn rlog-tour-prev">Quay xe</button>` : `<button class="rlog-tour-btn rlog-tour-skip">Skip lẹ</button>`}
-                    <button class="rlog-tour-btn rlog-tour-next rlog-tour-primary">${isLast ? 'Chốt đơn' : 'Bước tới'}</button>
+                    ${!isFirst ? `<button class="rlog-tour-btn rlog-tour-prev">Quay lại</button>` : `<button class="rlog-tour-btn rlog-tour-skip">Bỏ qua</button>`}
+                    <button class="rlog-tour-btn rlog-tour-next rlog-tour-primary">${isLast ? 'Xong' : 'Tiếp tục'}</button>
                 </div>
             </div>
         `;
+    }
 
-        // Trói cổ mấy cái sự kiện vô nút 🪢
+    /* Phù phép sự kiện cho mớ nút với chấm tròn trong bong bóng: Tới/Lui/Bỏ qua/Thoát/Nhảy cóc */
+    function bindTooltipEvents() {
         const btnPrev = tooltip.querySelector('.rlog-tour-prev');
         const btnNext = tooltip.querySelector('.rlog-tour-next');
         const btnSkip = tooltip.querySelector('.rlog-tour-skip');
@@ -398,7 +418,7 @@
         if (btnSkip) btnSkip.addEventListener('click', (e) => { e.stopPropagation(); endTour(); });
         if (btnClose) btnClose.addEventListener('click', (e) => { e.stopPropagation(); endTour(); });
 
-        // Cột thêm sự kiện chọt mấy cái hột tròn để nhảy cóc 🔴
+        /* Chọt chấm tròn để nhảy cóc */
         const dots = tooltip.querySelectorAll('.rlog-tour-dot');
         dots.forEach(dot => {
             dot.addEventListener('click', (e) => {
@@ -409,37 +429,53 @@
                 }
             });
         });
-
-        // Chốt tọa độ cho vòng hào quang với bong bóng 📍
-        positionElements(targetEl, step);
-
-        // Lỡ có dính delay (Kiểu như tụi CSS nó đang múa múa), thì Tawa xài vòng lặp frame để bắt tụi hào quang chạy theo sát nút, 🔄
-        // Đu bám sát sàn sạt hoàn hảo luôn, chứ ai rảnh mà đứng nghệt mặt ra đợi! (๑•̀ㅂ•́)و✧
-        if (step.delay && step.delay > 0) {
-            let start = Date.now();
-            function trackAnimation() {
-                const updatedTarget = panel.querySelector(step.targetSelector);
-                if (updatedTarget) positionElements(updatedTarget, step);
-                
-                if (Date.now() - start < step.delay) {
-                    requestAnimationFrame(trackAnimation);
-                }
-            }
-            requestAnimationFrame(trackAnimation);
-        }
     }
 
+    function showStep(index) {
+        const step = steps[index];
+        const panel = document.getElementById('rlog-panel');
+        const targetEl = panel ? panel.querySelector(step.targetSelector) : null;
+
+        if (!targetEl) {
+            /* Quét không ra mục tiêu thì ngâm đấy chờ (Đợi DOM nở ra, vd ô tìm kiếm lòi ra) */
+            if (findTargetRetryCount < TARGET_RETRY_MAX) {
+                findTargetRetryCount++;
+                setTimeout(() => {
+                    if (isActive && currentStep === index) {
+                        showStep(index);
+                    }
+                }, TARGET_RETRY_DELAY_MS);
+            } else {
+                findTargetRetryCount = 0;
+                console.warn(`[Tour] Tìm mỏi mắt không thấy: ${step.targetSelector}`);
+                executeStep(index + 1);
+            }
+            return;
+        }
+        findTargetRetryCount = 0;
+
+        /* Cập nhật ruột bong bóng */
+        tooltip.innerHTML = buildTooltipHtml(index);
+
+        /* Kích hoạt sự kiện nút */
+        bindTooltipEvents();
+
+        /* Định vị cho cái khung sáng với bong bóng */
+        positionElements(targetEl, step);
+    }
+
+    /* ── Tính toán định vị ─────────────────────────────────────── */
     function positionElements(targetEl, step) {
         const panel = document.getElementById('rlog-panel');
         if (!panel) return;
 
         const placement = step.placement;
-        const padding = step.padding !== undefined ? step.padding : 4;
+        const padding = step.padding !== undefined ? step.padding : HIGHLIGHT_PADDING_DEFAULT;
 
         const panelRect = panel.getBoundingClientRect();
         const targetRect = targetEl.getBoundingClientRect();
 
-        // Tính toán tọa độ ké trong ruột panel 🧮
+        /* Tính toán tọa độ so với ruột bảng điều khiển */
         const top = targetRect.top - panelRect.top;
         const left = targetRect.left - panelRect.left;
         const width = targetRect.width;
@@ -450,13 +486,13 @@
         let boxWidth = width + padding * 2;
         let boxHeight = height + padding * 2;
 
-        // Độ lại cái vòng hào quang (Để trói đúng cổ mấy khu như ô tìm kiếm nè) 🔧
-        // Đám leftExtra/topExtra/bottomExtra mà dương thì bóp vô (xẻo bớt), còn âm thì phình to ra 🎈
+        /* Nắn nót lại khung sáng (Dành cho việc soi đúng chuẩn cái ô tìm kiếm...)
+           topExtra/bottomExtra dương là cắt bớt vào trong, âm là bành ra ngoài */
         if (step.highlightAdjust) {
             const adj = step.highlightAdjust;
-            // leftAlignTo: Bắt mép trái dính rịt lề trái của một cái mỏ neo (Kiểu như cái kính lúp vậy á). ⚓
-            // Soi tọa độ thật của mỏ neo, tự động uốn éo theo cái nút 24px của PC hay 20px của mobile, 📱
-            // Đá bay cái trò hardcode leftExtra (Chết cứng kiểu đó xuống mobile nó lại lòi ra 4px sai số). 🛑
+            /* leftAlignTo: Ép cạnh trái thẳng tắp với mép trái của phần tử neo (như cái nút kính lúp).
+               Đo tọa độ thực tế của mỏ neo, tự động thích ứng với chênh lệch nút bự 24px (Desktop) / nút nhỏ 20px (Mobile),
+               tránh việc xài tọa độ chết (Di động mà xài số chết là lệch 4px ngay). */
             if (adj.leftAlignTo) {
                 const anchorEl = targetEl.parentElement
                     ? targetEl.parentElement.querySelector(adj.leftAlignTo)
@@ -464,15 +500,11 @@
                 if (anchorEl) {
                     const anchorRect = anchorEl.getBoundingClientRect();
                     const anchorLeft = anchorRect.left - panelRect.left;
-                    // Lề trái = Mép trái mỏ neo (Chuẩn không cần chỉnh, hông thèm bú miếng padding nào), 📏
-                    // Lề phải giữ nguyên = Mép phải mục tiêu gốc + padding (Giống ý nghĩa của padding trên dưới) 🧱
+                    /* Cạnh trái = Mép trái mỏ neo (Chuẩn xác, không thêm padding),
+                       Cạnh phải giữ nguyên = Mép phải mục tiêu gốc + padding (Giống hệt ngữ nghĩa padding trên dưới) */
                     boxLeft = anchorLeft;
                     boxWidth = (left + width + padding) - anchorLeft;
                 }
-            }
-            if (adj.leftExtra !== undefined) {
-                boxLeft += adj.leftExtra;
-                boxWidth -= adj.leftExtra;
             }
             if (adj.topExtra !== undefined) {
                 boxTop += adj.topExtra;
@@ -483,58 +515,51 @@
             }
         }
 
-        // Trò này chế riêng cho cái núm bóp méo ở góc dưới phải thôi, hông phá làng phá xóm mấy khung khác 📐
-        if (step.targetSelector === '.rlog-resize-grip') {
-            // Xài content-box mặc định thì cái viền 2px nó sẽ chòi ra ngoài. Do mục tiêu dính sát mép, nên viền hào quang góc phải dưới bị thằng overflow: hidden của panel nó chém cụt đầu! ⚔️
-            boxLeft -= 0;
-            boxTop -= 0;
-        }
-
-        // Ụp cái vòng hào quang vô 📍
-        highlightBox.style.boxSizing = ''; // Reset về mặc định, cấm cái border-box ất ơ nào ăn ké 🛑
+        /* Chốt vị trí khung sáng */
+        highlightBox.style.boxSizing = ''; /* Trả lại mặc định, ngừa bệnh border-box ám quẻ */
         highlightBox.style.top = `${boxTop}px`;
         highlightBox.style.left = `${boxLeft}px`;
         highlightBox.style.width = `${boxWidth}px`;
         highlightBox.style.height = `${boxHeight}px`;
 
-        // Triệu hồi bong bóng (Phải đập cái display:block vô mặt nó mới đo được 3 vòng nha) 📏
+        /* Hiện bong bóng lên (Phải display:block mới đo đạc được kích thước nhé) */
         tooltip.style.display = 'block';
         tooltip.style.opacity = '1';
 
-        // Câu giờ xíu rồi mới set tọa độ bong bóng, bao hốt trúng cái offsetHeight xịn ⏱️
+        /* Trì hoãn định vị bong bóng một xíu, chắc chắn húp được đúng offsetHeight */
         requestAnimationFrame(() => {
             const tooltipWidth = tooltip.offsetWidth;
             const tooltipHeight = tooltip.offsetHeight;
-            
+
             let tooltipTop = 0;
             let tooltipLeft = 0;
 
             if (placement === 'top') {
-                tooltipTop = top - tooltipHeight - padding - 8;
+                tooltipTop = top - tooltipHeight - padding - TOOLTIP_ARROW_GAP;
                 tooltip.classList.add('rlog-tour-top');
             } else {
-                // Chỗ đứng mặc định là dí xuống dưới đít 👇
-                tooltipTop = top + height + padding + 8; // 8px là khoảng cách của cái tam giác nhú ra đó 🔺
+                /* placement mặc định là chui xuống dưới */
+                tooltipTop = top + height + padding + TOOLTIP_ARROW_GAP; /* Độ hở của cái chóp mũi tên */
                 tooltip.classList.remove('rlog-tour-top');
             }
-            
-            // Dóng hàng ngay giữa tâm của con mồi 🎯
+
+            /* Căn bong bóng vô chính giữa mục tiêu theo chiều ngang */
             tooltipLeft = left + (width / 2) - (tooltipWidth / 2);
             let arrowLeft = tooltipWidth / 2;
-            
-            // Chặn đầu hông cho lọt thỏm ra lề phải panel 🧱
-            if (tooltipLeft + tooltipWidth > panelRect.width - 10) {
-                tooltipLeft = panelRect.width - tooltipWidth - 10;
+
+            /* Chống tràn bên phải */
+            if (tooltipLeft + tooltipWidth > panelRect.width - TOOLTIP_EDGE_MARGIN) {
+                tooltipLeft = panelRect.width - tooltipWidth - TOOLTIP_EDGE_MARGIN;
                 arrowLeft = targetRect.left - panelRect.left - tooltipLeft + targetRect.width / 2;
-            } else if (tooltipLeft < 10) {
-                // Bít cửa hông cho tuột ra lề trái 🧱
-                tooltipLeft = 10;
+            } else if (tooltipLeft < TOOLTIP_EDGE_MARGIN) {
+                /* Chống tràn bên trái */
+                tooltipLeft = TOOLTIP_EDGE_MARGIN;
                 arrowLeft = targetRect.left - panelRect.left - tooltipLeft + targetRect.width / 2;
             }
 
-            // Khóa mõm cái tam giác hông cho nó mọc lố bong bóng (Chừa 24px cách mép, để nó khỏi chồi ra ngoài bo góc hay bồng bềnh lơ lửng) 🎈
-            if (arrowLeft > tooltipWidth - 24) arrowLeft = tooltipWidth - 24;
-            if (arrowLeft < 24) arrowLeft = 24;
+            /* Hãm cương mũi tên đừng để đâm lòi ra ngoài bong bóng (Chừa lại 24px cách mép, chống mũi tên mọc ngoài viền bo góc hoặc bay tự do) */
+            if (arrowLeft > tooltipWidth - ARROW_EDGE_LIMIT) arrowLeft = tooltipWidth - ARROW_EDGE_LIMIT;
+            if (arrowLeft < ARROW_EDGE_LIMIT) arrowLeft = ARROW_EDGE_LIMIT;
 
             tooltip.style.setProperty('--arrow-left', `${arrowLeft}px`);
             tooltip.style.top = `${tooltipTop}px`;
@@ -542,7 +567,8 @@
         });
     }
 
-    // Vạch mặt mấy cái API ra cho người ngoài xài ké 🔌
+    /* ── API ra bên ngoài ────────────────────────────────────────────── */
+    /* Lộ hàng API cho thế giới bên ngoài xài (index.js load động file này xong thì dùng) */
     window.__RLogTour = {
         check: checkAndStartTour,
         start: startTour,

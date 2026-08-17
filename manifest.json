@@ -1,9 +1,9 @@
 {
-    "display_name": "Nhật ký yêu cầu gần đây",
+    "display_name": "Lịch sử Request gần đây",
     "loading_order": 999,
     "js": "index.js",
     "css": "style.css",
     "author": "akira",
-    "version": "1.9.0",
-    "description": "Tự động lấy toàn bộ prompt được gửi cho AI mỗi lần, tiện lợi để xem lại bất cứ lúc nào."
+    "version": "1.10.0",
+    "description": "Tự động bắt lấy toàn bộ prompt mỗi lần gửi cho AI, giúp dễ dàng tua lại và xem bất cứ lúc nào."
 }
