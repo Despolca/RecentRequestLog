@@ -502,7 +502,7 @@ function formatTimestamp(value) {
 /* Trích xuất định danh "Gia tộc" từ tên model (Cùng gia tộc dùng chung tokenizer), rule khớp theo getTokenizerModel() của tokenizers.js trong ST.
    @param {string} modelName @returns {string} Định danh gia tộc, nếu không nhận ra thì trả về tên gốc in thường */
 function extractModelFamily(modelName) {
-    if (!modelName || modelName === '未知模型') return '';
+    if (!modelName || modelName === 'Mô hình không xác định') return '';
     const m = modelName.toLowerCase();
 
     /* Gia tộc GPT: gpt, o1, o3, o4, davinci, turbo */
@@ -527,7 +527,7 @@ function extractModelFamily(modelName) {
 /* 2 tên model có cùng gia tộc không (Dựa theo extractModelFamily, xài chung tokenizer)
    @param {string} modelA @param {string} modelB @returns {boolean} */
 function isSameModelFamily(modelA, modelB) {
-    if (!modelA || modelA === '未知模型' || !modelB) return true; /* Nếu không rõ thì mặc định cho là tương thích */
+    if (!modelA || modelA === 'Mô hình không xác định' || !modelB) return true; /* Nếu không rõ thì mặc định cho là tương thích */
     return extractModelFamily(modelA) === extractModelFamily(modelB);
 }
 
@@ -575,9 +575,9 @@ async function computeTokensForMessages(messages, modelName) {
 }
 
 /* Trích xuất tên model từ body request (Mỗi API xài một tên field khác nhau)
-   @param {object} body @returns {string} Trích không được thì trả về 未知模型 */
+   @param {object} body @returns {string} Trích không được thì trả về Mô hình không xác định */
 function extractModelName(body) {
-    if (!body || typeof body !== 'object' || Array.isArray(body)) return '未知模型';
+    if (!body || typeof body !== 'object' || Array.isArray(body)) return 'Mô hình không xác định';
 
     /* Field model tầng ngoài cùng (OpenAI và hầu hết định dạng tương thích) */
     if (typeof body.model === 'string' && body.model) return body.model;
@@ -593,7 +593,7 @@ function extractModelName(body) {
         if (typeof body[key] === 'string' && body[key]) return body[key];
     }
 
-    return '未知模型';
+    return 'Mô hình không xác định';
 }
 
 function getFullPromptText(record) {
@@ -1490,11 +1490,11 @@ function tryPromoteSourcesFromFloor() {
 /* Nâng cấp nguồn của bản ghi thành "nguyên bản" (Chỉ sửa 3 trường của nguồn: loại / tên hiển thị / giải thích khi hover; Giữ nguyên các nội dung khác của bản ghi) */
 function promoteRecordSource(record) {
     const prevType = record.source && record.source.type;
-    record.source = makeSource('native', '原生请求-响应落楼修正', 'correct');
+    record.source = makeSource('native', 'Yêu cầu nguyên bản - Sửa chữa sau khi render phản hồi', 'correct');
     record.sourceCorrected = true;
     pendingSourceCorrections.delete(record);
     sourceCorrectionStats.count++;
-    sourceCorrectionStats.lastReason = '响应纯正文与楼层正文 / 翻页候选唯一匹配';
+    sourceCorrectionStats.lastReason = 'Khớp duy nhất giữa văn bản thuần của phản hồi và văn bản của tầng / ứng viên lật trang';
     sourceCorrectionStats.lastTime = formatTimestamp(Date.now());
     refreshRecordSourceDom(record, prevType);
 }
@@ -1545,11 +1545,11 @@ function installSourceTracking() {
     sourceTrackingInstalled = true;
 
     const nativeTargets = [
-        { selector: '#send_but', label: '发送按钮' },
-        { selector: '#option_regenerate', label: '重新生成' },
-        { selector: '#option_continue, #mes_continue', label: '继续' },
-        { selector: '#mes_impersonate', label: '扮演' },
-        { selector: '.swipe_right, .mes_swipe_right, [data-action="swipe-right"], [title="Swipe right"]', label: '生成备选回复' },
+        { selector: '#send_but', label: 'Nút gửi' },
+        { selector: '#option_regenerate', label: 'Tạo lại' },
+        { selector: '#option_continue, #mes_continue', label: 'Tiếp tục' },
+        { selector: '#mes_impersonate', label: 'Đóng vai' },
+        { selector: '.swipe_right, .mes_swipe_right, [data-action="swipe-right"], [title="Swipe right"]', label: 'Tạo phản hồi thay thế' },
     ];
 
     const onNativeClickIntent = (e) => {
@@ -1588,13 +1588,13 @@ function installSourceTracking() {
                 /* Chỉ bổ sung cờ đánh dấu khi sự kiện click DOM không thể bắt được, và chỉ nhận diện các loại tạo nguyên bản rõ ràng */
                 if (!lastNativeIntent || (Date.now() - lastNativeIntent.timestamp) > NATIVE_INTENT_WINDOW_MS) {
                     if (typeStr === 'impersonate') {
-                        rememberNativeIntent('扮演 (ST事件)', 'generationStarted');
+                        rememberNativeIntent('Đóng vai (Sự kiện ST)', 'generationStarted');
                     } else if (typeStr === 'continue') {
-                        rememberNativeIntent('继续 (ST事件)', 'generationStarted');
+                        rememberNativeIntent('Tiếp tục (Sự kiện ST)', 'generationStarted');
                     } else if (typeStr === 'regenerate') {
-                        rememberNativeIntent('重新生成 (ST事件)', 'generationStarted');
+                        rememberNativeIntent('Tạo lại (Sự kiện ST)', 'generationStarted');
                     } else if (typeStr === 'swipe') {
-                        rememberNativeIntent('生成备选回复 (ST事件)', 'generationStarted');
+                        rememberNativeIntent('Tạo phản hồi thay thế (Sự kiện ST)', 'generationStarted');
                     }
                 }
             };
@@ -1602,7 +1602,7 @@ function installSourceTracking() {
                 stCtx.eventSource.on(stCtx.event_types.GENERATION_STARTED, onGenStarted);
             } catch (err) {
                 /* Đăng ký thất bại chỉ ảnh hưởng đến nhận diện dự phòng, theo dõi lối vào DOM vẫn hoạt động bình thường */
-                console.debug(`[${PLUGIN_KEY}] 注册 GENERATION_STARTED 监听失败:`, err);
+                console.debug(`[${PLUGIN_KEY}] Đăng ký lắng nghe GENERATION_STARTED thất bại:`, err);
             }
         }
     }
@@ -1616,7 +1616,7 @@ function installSourceTracking() {
         if (!(targetEl instanceof HTMLTextAreaElement)) return;
         if (targetEl.id !== 'send_textarea') return;
 
-        rememberNativeIntent('输入框 Enter', 'keydown');
+        rememberNativeIntent('Enter trong khung nhập liệu', 'keydown');
     }, true);
 
     /* Expose API debug ra window */
@@ -1692,12 +1692,12 @@ function installSourceTracking() {
         },
     };
 
-    console.debug(`[${PLUGIN_KEY}] 请求来源识别已启用（证据分层判定 + 原生入口监听保底）。调试接口: window.__rlogDebug`);
+    console.debug(`[${PLUGIN_KEY}] Nhận diện nguồn yêu cầu đã được bật (Phán đoán phân tầng bằng chứng + Lắng nghe lối vào nguyên bản làm dự phòng). Giao diện debug: window.__rlogDebug`);
 }
 
 function getSourceLabel(source) {
-    if (source && source.type === 'native') return '原生';
-    return '插件';
+    if (source && source.type === 'native') return 'Nguyên bản';
+    return 'Plugin';
 }
 
 function getSourceClass(source) {
@@ -1720,7 +1720,7 @@ function getCurrentCharacterName() {
             return ctx.groups[ctx.groupId].name;
         }
     } catch (e) { /* ignore */ }
-    return '未知角色';
+    return 'Nhân vật không xác định';
 }
 
 function normalizeRole(role) {
@@ -1894,11 +1894,11 @@ async function processCapturedBody(body, requestUrl, captureId, viaProxyEnvelope
     const source = isSimulated
         ? { ...SIMULATED_PROMPT_SOURCE }
         : (viaProxyEnvelope
-            ? noteSourceDecision(ENVELOPE_PROXY_SOURCE, '信封解包命中（RQ-31，判定终局）')
+            ? noteSourceDecision(ENVELOPE_PROXY_SOURCE, 'Trúng giải nén phong bì (RQ-31, phán đoán chung cuộc)')
             : decideRequestSource(body, requestUrl, requestContext));
     let modelName = extractModelName(body);
     /* Fallback tên model của bản ghi mô phỏng: Khi không lấy được trong body request thì dùng tên model hiện tại của ST */
-    if (isSimulated && modelName === '未知模型') modelName = getStChatCompletionModelName() || modelName;
+    if (isSimulated && modelName === 'Mô hình không xác định') modelName = getStChatCompletionModelName() || modelName;
     /* Mô phỏng đã phán đoán thất bại (timeout) thì không lập hồ sơ nữa: Kiểm tra một lần trước và sau khi tách từ (tokenize), tránh tính toán vô ích */
     if (isSimulated && simulateCtx.canceled) {
         simulateCtx.settle(null);
@@ -2088,7 +2088,7 @@ function installRequestHooks() {
     hookedFetchHooks.set(window, currentHook);
     hookRealmXhr(window);
 
-    console.debug(`[${PLUGIN_KEY}] 请求拦截已启用（fetch + XHR，网络层统一拦截模式）`);
+    console.debug(`[${PLUGIN_KEY}] Đánh chặn request đã được bật (fetch + XHR, chế độ đánh chặn thống nhất tầng mạng)`);
 }
 
 /* Cài đặt wrapper request cho một iframe cùng nguồn (fetch + XHR): Vượt domain không lấy được contentWindow thì bỏ qua trực tiếp;
@@ -2169,7 +2169,7 @@ function installIframeRequestHooks() {
     });
     observer.observe(document.documentElement, { childList: true, subtree: true });
 
-    console.debug(`[${PLUGIN_KEY}] iframe 请求拦截已启用（fetch + XHR，初始 ${hookedCount}/${totalCount} 个 iframe + 动态监听）`);
+    console.debug(`[${PLUGIN_KEY}] Đánh chặn request iframe đã được bật (fetch + XHR, ban đầu ${hookedCount}/${totalCount} iframe + lắng nghe động)`);
 }
 
 /* ── Wrapper và lắng nghe XHR ─────────────────────── */
@@ -2244,7 +2244,7 @@ function beginXhrCapture(xhr, body, realmWindow) {
         rejectResponse = reject;
     });
     /* Phán đoán không qua (chưa đăng ký theo dõi reply) sẽ không tạo ra Promise rejection chưa được xử lý */
-    responsePromise.catch(() => { /* 静默 */ });
+    responsePromise.catch(() => { /* Xử lý im lặng */ });
 
     /* Nạp theo gia số (chỉ lấy đoạn mới thêm lần này) */
     function feed(fullText) {
@@ -2897,7 +2897,7 @@ function attachReplyToRecord(record, replyData, skipRender = false) {
     /* Tính token chính xác của reply bất đồng bộ (sau khi ghi kết quả lại chỉ cập nhật số trên thanh tiêu đề reply, không dựng lại danh sách) */
     computeTokensForMessages([record.reply], record.modelName || '').then(() => {
         updateReplyTokenInDom(record);
-    }).catch(() => { /* 静默 */ });
+    }).catch(() => { /* Xử lý im lặng */ });
     if (!skipRender) appendReplyToRecordDom(record);
     /* Văn bản chính response đã chốt: Đăng ký thành "chờ sửa chữa" (đợi sau khi sự kiện tin nhắn ST định hình vào tầng sẽ thực hiện một lần nâng cấp giới hạn "plugin → nguyên bản") */
     queueSourceCorrection(record);
@@ -3019,8 +3019,8 @@ function addRecord(characterName, messages, source, modelName, rawBody, captureI
         /* Phán đoán nguồn được hoàn thành lúc đánh chặn, việc tạo hồ sơ phải đợi tính toán token, giữa hai bước này trạng thái lượt hiện tại có thể đã thay đổi,
            do đó trước khi tạo hồ sơ thực hiện xác nhận cuối cùng đối với "bằng chứng vị trí" (xem finalizePositionEvidenceSource) */
         source: finalizePositionEvidenceSource(source)
-            || { type: 'plugin', label: '插件', detail: SOURCE_PLUGIN_DEFAULT_DETAIL },
-        modelName: modelName || '未知模型',
+            || { type: 'plugin', label: 'Plugin', detail: SOURCE_PLUGIN_DEFAULT_DETAIL },
+        modelName: modelName || 'Mô hình không xác định',
         messages,
         rawBody: rawBody || null,   /* Object JSON body request gốc (dùng cho định dạng gốc của "Xem toàn văn") */
         collapsed: true,
@@ -3140,13 +3140,13 @@ function updateMasterToggleUI() {
             btn.classList.remove('rlog-master-off');
             btn.style.color = '#4caf50'; /* Màu biểu tượng khi công tắc chính bật (inline ghi đè .rlog-master-on của CSS) */
             btn.querySelector('i').className = 'fa-solid fa-power-off';
-            btn.title = '插件开启-自动记录中';
+            btn.title = 'Plugin đã bật - Đang tự động ghi lại';
         } else {
             btn.classList.add('rlog-master-off');
             btn.classList.remove('rlog-master-on');
             btn.style.color = '#999'; /* Màu biểu tượng khi công tắc chính tắt (inline ghi đè .rlog-master-off của CSS) */
             btn.querySelector('i').className = 'fa-solid fa-power-off';
-            btn.title = '插件关闭-已停止记录';
+            btn.title = 'Plugin đã tắt - Đã dừng ghi lại';
         }
     }
 
@@ -3187,12 +3187,12 @@ function updatePreviewToggleUI() {
         toggleEl.classList.add('rlog-preview-on');
         toggleEl.classList.remove('rlog-preview-off');
         if (iconEl) iconEl.className = 'fa-solid fa-eye';
-        toggleEl.title = '内容预览-已开启';
+        toggleEl.title = 'Xem trước nội dung - Đã bật';
     } else {
         toggleEl.classList.remove('rlog-preview-on');
         toggleEl.classList.add('rlog-preview-off');
         if (iconEl) iconEl.className = 'fa-solid fa-eye-slash';
-        toggleEl.title = '内容预览-已关闭';
+        toggleEl.title = 'Xem trước nội dung - Đã tắt';
     }
 }
 
@@ -3482,12 +3482,12 @@ function showMaxRecordsDialog() {
 
         dialog.innerHTML = `
         <div class="rlog-dialog-header">
-            <span>设置记录上限</span>
-            <button class="rlog-dialog-close" title="关闭"><i class="fa-solid fa-xmark"></i></button>
+            <span>Cài đặt giới hạn bản ghi</span>
+            <button class="rlog-dialog-close" title="Đóng"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div class="rlog-dialog-body">
             <p class="rlog-dialog-desc">
-                请输入记录上限，范围 ${MIN_MAX_RECORDS} ~ ${MAX_MAX_RECORDS}。
+                Vui lòng nhập giới hạn bản ghi, phạm vi ${MIN_MAX_RECORDS} ~ ${MAX_MAX_RECORDS}.
             </p>
             <div class="rlog-dialog-input-row">
                 <input type="number" class="rlog-dialog-input" 
@@ -3495,7 +3495,7 @@ function showMaxRecordsDialog() {
                        min="${MIN_MAX_RECORDS}" max="${MAX_MAX_RECORDS}" 
                        value="${MAX_RECORDS}" 
                        placeholder="${MAX_RECORDS}">
-                <button class="rlog-dialog-btn rlog-dialog-btn-confirm" id="rlog-dialog-confirm">确定</button>
+                <button class="rlog-dialog-btn rlog-dialog-btn-confirm" id="rlog-dialog-confirm">Xác nhận</button>
             </div>
 
         </div>
@@ -3547,14 +3547,14 @@ function closeMaxRecordsDialog() {
 let confirmDialogEl = null;
 
 /* Popup xác nhận chung (Các thao tác phá hủy như xóa sạch bản ghi, xóa từng mục...)
-   @param {object} options { title=确认操作, message=, confirmText=确认, cancelText=取消,
+   @param {object} options { title='Xác nhận thao tác', message='', confirmText='Xác nhận', cancelText='Hủy',
    onConfirm, onCancel } */
 function showConfirmDialog(options) {
     const {
-        title = '确认操作',
+        title = 'Xác nhận thao tác',
         message = '',
-        confirmText = '确认',
-        cancelText = '取消',
+        confirmText = 'Xác nhận',
+        cancelText = 'Hủy',
         onConfirm = null,
         onCancel = null,
     } = options || {};
@@ -3594,7 +3594,7 @@ function showConfirmDialog(options) {
     dialog.innerHTML = `
         <div class="rlog-dialog-header">
             <span>${escapeHtml(title)}</span>
-            <button class="rlog-dialog-close" title="关闭"><i class="fa-solid fa-xmark"></i></button>
+            <button class="rlog-dialog-close" title="Đóng"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div class="rlog-dialog-body">
             <div class="rlog-confirm-message">${message}</div>
@@ -4213,13 +4213,13 @@ function openSearchForRecord(recordIndex) {
     searchBox.className = 'rlog-search-box';
     searchBox.innerHTML = `
         <div class="rlog-search-input-wrap">
-            <input type="text" class="rlog-search-input" placeholder="搜索..." autocomplete="off" spellcheck="false">
+            <input type="text" class="rlog-search-input" placeholder="Tìm kiếm..." autocomplete="off" spellcheck="false">
             <span class="rlog-search-count">0/0</span>
         </div>
-        <button class="rlog-search-next" title="下一个 (Enter)" disabled>
+        <button class="rlog-search-next" title="Tiếp theo (Enter)" disabled>
             <i class="fa-solid fa-arrow-down"></i>
         </button>
-        <button class="rlog-search-prev" title="上一个 (Shift+Enter)" disabled>
+        <button class="rlog-search-prev" title="Trước đó (Shift+Enter)" disabled>
             <i class="fa-solid fa-arrow-up"></i>
         </button>
     `;
@@ -4313,7 +4313,7 @@ function openSearchForRecord(recordIndex) {
 /* Tên model → Nhóm bộ lọc: DeepSeek / Claude / Gemini (bao gồm Gemma, Palm) được nhóm cố định, còn lại thuộc về "Khác".
    Tách biệt, không dùng lại với extractModelFamily() (dùng cho phân từ): DeepSeek cần được nhóm độc lập. */
 function getModelFilterGroup(modelName) {
-    if (!modelName || modelName === '未知模型') return 'other';
+    if (!modelName || modelName === 'Mô hình không xác định') return 'other';
     const m = modelName.toLowerCase();
     if (m.includes('deepseek')) return 'deepseek';
     if (m.includes('claude')) return 'claude';
@@ -4373,7 +4373,7 @@ function createDefaultFilterState() {
 
 /* Lưu trữ vĩnh viễn trạng thái bộ lọc hiện tại vào localStorage (chỉ gọi khi công tắc "Lưu trữ trạng thái bộ lọc" được bật) */
 function saveFilterState() {
-    try { localStorage.setItem(STORAGE_FILTER_STATE_KEY, JSON.stringify(filterState)); } catch (e) { /* 忽略异常 */ }
+    try { localStorage.setItem(STORAGE_FILTER_STATE_KEY, JSON.stringify(filterState)); } catch (e) { /* Bỏ qua ngoại lệ */ }
 }
 
 /* Làm sạch trạng thái bộ lọc đọc về từ localStorage: Lấy mặc định mở toàn bộ làm tiêu chuẩn, từng nhóm từng key chỉ chấp nhận giá trị boolean, còn lại fallback về true */
@@ -4567,7 +4567,7 @@ function buildMessageHtml(msg, recordIdx, msgIdx) {
                 <span class="rmsg-role-badge ${roleClass}">${escapeHtml(roleLabel)}</span>
                 ${previewHtml}
                 <span class="rmsg-tokens">${tokenPrefix}${msg.tokens} tokens</span>
-                <button class="rmsg-copy-btn" data-record="${recordIdx}" data-msg="${msgIdx}" title="复制此消息">
+                <button class="rmsg-copy-btn" data-record="${recordIdx}" data-msg="${msgIdx}" title="Sao chép tin nhắn này">
                     <i class="fa-solid fa-copy"></i>
                 </button>
             </div>
@@ -4651,8 +4651,8 @@ function renderPanelContent() {
     if (records.length === 0) {
         panelEl.classList.add('rlog-empty-list');
         const emptyMsg = masterEnabled 
-            ? '暂无请求记录，请发送消息后查看。'
-            : '记录功能已关闭，请点击电源图标开启。';
+            ? 'Tạm thời không có bản ghi yêu cầu, vui lòng gửi tin nhắn để xem.'
+            : 'Chức năng ghi lại đã tắt, vui lòng nhấp vào biểu tượng nguồn để bật.';
         listEl.innerHTML = `<div class="rlog-empty">${escapeHtml(emptyMsg)}</div>`;
         pruneDetachedUnloadedBodies();
         panelContentDirty = false;
@@ -4663,7 +4663,7 @@ function renderPanelContent() {
     /* Sau khi lọc không có bản ghi nào để hiển thị: Trạng thái trống chuyên dụng + Reset bằng một click (Phân biệt với "Tạm thời không có bản ghi") */
     if (visibleRecords.length === 0) {
         panelEl.classList.add('rlog-empty-list');
-        listEl.innerHTML = `<div class="rlog-empty"><div>没有符合筛选条件的记录</div><button id="rlog-filter-reset-empty" class="rlog-filter-reset-empty-btn">重置筛选</button></div>`;
+        listEl.innerHTML = `<div class="rlog-empty"><div>Không có bản ghi nào khớp với điều kiện lọc</div><button id="rlog-filter-reset-empty" class="rlog-filter-reset-empty-btn">Đặt lại bộ lọc</button></div>`;
         const resetBtn = listEl.querySelector('#rlog-filter-reset-empty');
         if (resetBtn) {
             resetBtn.addEventListener('click', (e) => {
@@ -4716,31 +4716,31 @@ function renderPanelContent() {
             return `
                 <div class="rlog-record ${collapsedClass} ${pinnedClass}" data-source="${sourceType}" data-record-index="${idx}">
                     <div class="rlog-record-header">
-                        <div class="rlog-record-info" title="长按置顶 / 长按取消置顶">
+                        <div class="rlog-record-info" title="Nhấn giữ để ghim / Nhấn giữ để bỏ ghim">
                             <span class="rlog-char-name">${escapeHtml(rec.characterName)}</span>
                             <span class="rlog-source-badge ${sourceClass}" title="${escapeHtml(sourceTitle)}"><span class="rlog-status-dot"></span>${escapeHtml(sourceLabel)}</span>
                             <span class="rlog-time">${escapeHtml(rec.timestamp)}</span>
-                            <span class="rlog-model-badge" title="请求模型">${escapeHtml(rec.modelName || '未知模型')}</span>
+                            <span class="rlog-model-badge" title="Mô hình yêu cầu">${escapeHtml(rec.modelName || 'Mô hình không xác định')}</span>
                             <span class="rlog-total-tokens">${recordTokenPrefix}<span class="rlog-token-num rlog-token-tier-${getTokenTier(totalTokens)}">${totalTokens}</span>&nbsp;tokens [${rec.messages.length}]</span>
                         </div>
                         <div class="rlog-record-actions">
                             <div class="rlog-record-actions-inner" style="display:flex; gap:4px; align-items:center;">
-                                <button class="rlog-search-btn" data-record="${idx}" title="搜索本条记录">
+                                <button class="rlog-search-btn" data-record="${idx}" title="Tìm kiếm bản ghi này">
                                     <i class="fa-solid fa-magnifying-glass"></i>
                                 </button>
-                                <button class="rlog-msg-expand-btn" data-record="${idx}" title="展开所有消息">
+                                <button class="rlog-msg-expand-btn" data-record="${idx}" title="Mở rộng tất cả tin nhắn">
                                     <i class="fa-solid fa-expand"></i>
                                 </button>
-                                <button class="rlog-msg-collapse-btn" data-record="${idx}" title="折叠所有消息">
+                                <button class="rlog-msg-collapse-btn" data-record="${idx}" title="Thu gọn tất cả tin nhắn">
                                     <i class="fa-solid fa-compress-alt"></i>
                                 </button>
-                                <button class="rlog-jump-bottom-btn" data-record="${idx}" title="快速置底">
+                                <button class="rlog-jump-bottom-btn" data-record="${idx}" title="Cuộn nhanh xuống đáy">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="4" x2="12" y2="15"></line><line x1="5" y1="20" x2="19" y2="20"></line></svg>
                                 </button>
-                                <button class="rlog-read-full-btn" data-record="${idx}" title="查看全文">
+                                <button class="rlog-read-full-btn" data-record="${idx}" title="Xem toàn văn">
                                     <i class="fa-solid fa-file-lines"></i>
                                 </button>
-                                <button class="rlog-delete-record-btn" data-record="${idx}" title="删除本条记录">
+                                <button class="rlog-delete-record-btn" data-record="${idx}" title="Xóa bản ghi này">
                                     <i class="fa-solid fa-trash-can"></i>
                                 </button>
                             </div>
@@ -5131,10 +5131,10 @@ function bindListEvents(listEl) {
             if (!record) return;
 
             showConfirmDialog({
-                title: '删除单条记录',
-                message: `确定要删除 <strong>${escapeHtml(record.characterName)}</strong> 的这条请求记录吗？<br>（${escapeHtml(record.timestamp)}，共 ${record.messages.length} 条消息）<br>此操作不可撤销。`,
-                confirmText: '删除',
-                cancelText: '取消',
+                title: 'Xóa một bản ghi',
+                message: `Xác nhận muốn xóa bản ghi yêu cầu này của <strong>${escapeHtml(record.characterName)}</strong> không?<br>(${escapeHtml(record.timestamp)}, tổng cộng ${record.messages.length} tin nhắn)<br>Thao tác này không thể hoàn tác.`,
+                confirmText: 'Xóa',
+                cancelText: 'Hủy',
                 onConfirm: () => {
                     deleteRecord(idx);
                 },
@@ -5207,8 +5207,8 @@ function toggleRecordPinned(index, infoEl) {
     }
 
     showPinToast(record.pinned
-        ? '已置顶，不受普通记录清理影响'
-        : '已取消置顶，将重新参与普通记录清理');
+        ? 'Đã ghim, không bị ảnh hưởng bởi việc dọn dẹp bản ghi bình thường'
+        : 'Đã bỏ ghim, sẽ tham gia lại vào quá trình dọn dẹp bản ghi bình thường');
 }
 
 /* Hiển thị toast gọn nhẹ (Căn giữa đỉnh bảng điều khiển, dùng chung cho Ghim/Xóa sạch/Theo dõi theme và Lối vào chiếm chỗ...);
@@ -5579,7 +5579,7 @@ async function doCopy(text, btnEl) {
             document.execCommand('copy');
             showCopyFeedback(btnEl, true);
         } catch (e) {
-            console.error(`[${PLUGIN_KEY}] 复制失败:`, e);
+            console.error(`[${PLUGIN_KEY}] Sao chép thất bại:`, e);
             showCopyFeedback(btnEl, false);
         }
         document.body.removeChild(textarea);
@@ -5607,12 +5607,12 @@ function showCopyFeedback(btnEl, success) {
 function getReadContent(record, format) {
     if (format === 'raw') {
         if (!record.rawBody) {
-            return '{"error": "原始请求体数据不可用"}';
+            return '{"error": "Dữ liệu body request gốc không khả dụng"}';
         }
         try {
             return JSON.stringify(record.rawBody, null, 2);
         } catch (e) {
-            return '{"error": "原始请求体数据不可用"}';
+            return '{"error": "Dữ liệu body request gốc không khả dụng"}';
         }
     }
     return getFullPromptText(record);
@@ -5696,19 +5696,19 @@ function openReadFullOverlay(index) {
 
     overlay.innerHTML = `
         <div class="rlog-read-header">
-            <span class="rlog-read-title">查看全文</span>
+            <span class="rlog-read-title">Xem toàn văn</span>
             <div class="rlog-read-header-actions">
-                <button class="rlog-read-format-btn formatted" title="切换显示格式" aria-label="切换显示格式">{}</button>
-                <button class="rlog-read-jump-top-btn" title="回顶">
+                <button class="rlog-read-format-btn formatted" title="Chuyển đổi định dạng hiển thị" aria-label="Chuyển đổi định dạng hiển thị">{}</button>
+                <button class="rlog-read-jump-top-btn" title="Về đỉnh">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="4" x2="19" y2="4"></line><line x1="12" y1="9" x2="12" y2="20"></line><polyline points="7 14 12 9 17 14"></polyline></svg>
                 </button>
-                <button class="rlog-read-jump-bottom-btn" title="置底">
+                <button class="rlog-read-jump-bottom-btn" title="Xuống đáy">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="4" x2="12" y2="15"></line><line x1="5" y1="20" x2="19" y2="20"></line></svg>
                 </button>
-                <button class="rlog-read-copy-btn" title="复制当前内容">
+                <button class="rlog-read-copy-btn" title="Sao chép nội dung hiện tại">
                     <i class="fa-solid fa-copy"></i>
                 </button>
-                <button class="rlog-read-close-btn" title="关闭 (Esc)">
+                <button class="rlog-read-close-btn" title="Đóng (Esc)">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
@@ -6609,7 +6609,7 @@ function addMenuEntry() {
     toggleBtn = document.createElement('div');
     toggleBtn.id = 'prompt-capture-toggle';
     toggleBtn.className = 'list-group-item';
-    toggleBtn.innerHTML = '<i class="fa-solid fa-clock-rotate-left"></i> 最近请求记录';
+    toggleBtn.innerHTML = '<i class="fa-solid fa-clock-rotate-left"></i> Bản ghi yêu cầu gần đây';
     toggleBtn.addEventListener('click', togglePanel);
     menu.appendChild(toggleBtn);
 
