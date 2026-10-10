@@ -5,7 +5,7 @@ Một plugin SillyTavern tự động thu thập toàn bộ prompt gửi cho AI 
 
 ## ✨ Giới thiệu tính năng
 
-- **T tự động thu thập**: Không cần mở bảng điều khiển, tự động ghi lại.
+- **Tự động thu thập**: Không cần mở bảng điều khiển, tự động ghi lại.
 - **Nhận diện nguồn request**: Phân biệt "Mặc định" (Native) và "Plugin".
 - **Phân nhóm theo vai trò**: Mỗi bản ghi được phân loại và hiển thị theo `System` / `User` / `Assistant`.
 - **Sao chép bằng một cú nhấp**: Hỗ trợ sao chép từng tin nhắn đơn lẻ hoặc toàn bộ nhóm bản ghi.
