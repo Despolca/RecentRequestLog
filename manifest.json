@@ -1,10 +1,13 @@
 {
-    "display_name": "Nhật ký Request gần đây",
-    "loading_order": 999,
+    "display_name": "Nhật ký yêu cầu gần đây",
+    "loading_order": 1,
     "js": "index.js",
     "css": "style.css",
+    "hooks": {
+        "clean": "cleanExtensionData"
+    },
     "author": "akira",
-    "version": "1.18.0",
+    "version": "1.20.0",
     "repository": "https://github.com/Despolca/RecentRequestLog",
-    "description": "Ghi lại nội dung request và response thực tế mà SillyTavern cùng các plugin bên thứ ba gửi đến AI, giúp dễ dàng xem lại, theo dõi và debug."
+    "description": "Ghi lại nội dung yêu cầu (Request) và phản hồi (Response) thực tế mà SillyTavern cùng tiện ích mở rộng bên thứ ba gửi đến AI, hỗ trợ việc truy vết, xem lại và debug thuận tiện."
 }
